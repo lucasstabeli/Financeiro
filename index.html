@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wealth Pro | Gestão Financeira</title>
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-tertiary: #111111;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #8a8a8a;
+            --text-tertiary: #555555;
+            --accent-gold: #d4af37;
+            --accent-gold-light: #f4d03f;
+            --accent-success: #22c55e;
+            --accent-danger: #ef4444;
+            --accent-warning: #f59e0b;
+            --accent-info: #3b82f6;
+            --radius: 16px;
+            --radius-sm: 12px;
+            --radius-xs: 8px;
+        }
+
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            touch-action: manipulation; 
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', sans-serif; 
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 90px;
+        }
+
+        /* Header Minimalista */
+        .header {
+            padding: 24px 20px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: linear-gradient(180deg, var(--bg-primary) 0%, rgba(0,0,0,0.9) 100%);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .brand-text {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, #888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .period-selector {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding: 4px 0;
+        }
+
+        .period-selector::-webkit-scrollbar { display: none; }
+
+        .period-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .period-btn.active {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border-color: var(--text-primary);
+        }
+
+        /* Bottom Navigation */
+        .nav-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+            z-index: 100;
+            max-width: 430px;
+            margin: 0 auto;
+        }
+
+        .nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--text-tertiary);
+            transition: all 0.2s ease;
+            background: none;
+            border: none;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .nav-item.active {
+            color: var(--accent-gold);
+        }
+
+        .nav-icon {
+            font-size: 22px;
+            transition: transform 0.2s ease;
+        }
+
+        /* Content */
+        .content {
+            padding: 0 16px;
+        }
+
+        .view-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .view-content.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards Premium */
+        .balance-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        }
+
+        .balance-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .balance-value {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -1.5px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .balance-value.positive { color: var(--accent-gold); }
+        .balance-value.negative { color: var(--accent-danger); }
+        .balance-value.neutral { color: var(--text-primary); }
+
+        .balance-row {
+            display: flex;
+            gap: 24px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .balance-col { flex: 1; }
+
+        .balance-col-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .balance-col-value {
+            font-size: 16px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .balance-col-value.positive { color: var(--accent-gold); }
+        .balance-col-value.negative { color: var(--accent-danger); }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card:active { transform: scale(0.98); }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-value.positive { color: var(--accent-gold); }
+        .stat-value.negative { color: var(--accent-danger); }
+        .stat-value.warning { color: var(--accent-warning); }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 24px 0 16px;
+        }
+
+        .section-title {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .section-action {
+            font-size: 13px;
+            color: var(--accent-gold);
+            font-weight: 600;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 4px 8px;
+        }
+
+        /* Forms */
+        .form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .input-group { margin-bottom: 16px; }
+
+        .input-group:last-child { margin-bottom: 0; }
+
+        .input-label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .input-field::placeholder { color: var(--text-tertiary); }
+
+        select.input-field {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: var(--radius-xs);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: -0.3px;
+        }
+
+        .btn-primary {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%);
+            color: #000;
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* Lists */
+        .list-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .list-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .list-item:last-child { border-bottom: none; }
+
+        .list-item:active { background: rgba(255, 255, 255, 0.02); }
+
+        .list-item-info { flex: 1; min-width: 0; }
+
+        .list-item-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .list-item-subtitle {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .list-item-value {
+            font-size: 15px;
+            font-weight: 700;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            margin-left: 12px;
+        }
+
+        .list-item-value.negative { color: var(--accent-danger); }
+        .list-item-value.positive { color: var(--accent-gold); }
+
+        .list-item-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 12px;
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-icon.delete:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-danger);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            opacity: 0.3;
+        }
+
+        .empty-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Charts */
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .chart-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 200px;
+        }
+
+        .chart-wrapper.large { height: 280px; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            background: var(--bg-tertiary);
+            padding: 4px;
+            border-radius: var(--radius-sm);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Progress */
+        .progress-container { margin-top: 16px; }
+
+        .progress-bar-bg {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-bar-fill.warning { background: var(--accent-warning); }
+        .progress-bar-fill.danger { background: var(--accent-danger); }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Table */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            background: var(--bg-tertiary);
+        }
+
+        .data-table tr:last-child td { border-bottom: none; }
+
+        .data-table tr:last-child {
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            width: 100%;
+            max-width: 430px;
+            border-radius: var(--radius) var(--radius) 0 0;
+            padding: 24px;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+            border-top: 1px solid var(--border);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+
+        /* Utility */
+        .hidden { display: none !important; }
+        .mt-16 { margin-top: 16px; }
+        .mb-16 { margin-bottom: 16px; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .pulse { animation: pulse 2s infinite; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-top">
+                <div class="brand">
+                    <div class="brand-icon">◆</div>
+                    <div class="brand-text">Wealth Pro</div>
+                </div>
+            </div>
+            <div class="period-selector" id="periodSelector"></div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- VIEW: OVERVIEW -->
+            <div id="view-overview" class="view-content active">
+                <div class="balance-card">
+                    <div class="balance-label">Patrimônio Total</div>
+                    <div class="balance-value neutral" id="total-patrimonio">R$ 0,00</div>
+                    <div class="balance-row">
+                        <div class="balance-col">
+                            <div class="balance-col-label">Receitas</div>
+                            <div class="balance-col-value positive" id="total-receitas">R$ 0,00</div>
+                        </div>
+                        <div class="balance-col">
+                            <div class="balance-col-label">Despesas</div>
+                            <div class="balance-col-value negative" id="total-despesas">R$ 0,00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Economia</div>
+                        <div class="stat-value positive" id="total-economia">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">% Economia</div>
+                        <div class="stat-value positive" id="total-perc">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cofrinhos</div>
+                        <div class="stat-value positive" id="total-cofrinhos">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Investimentos</div>
+                        <div class="stat-value positive" id="total-investimentos">R$ 0,00</div>
+                    </div>
+                </div>
+
+                <!-- Cofrinhos Table -->
+                <div class="section-header">
+                    <div class="section-title">Cofrinhos (CDI)</div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Banco</th>
+                                <th>Principal</th>
+                                <th>Rendimento</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Nubank</td>
+                                <td id="resumo-nubank-principal">R$ 0,00</td>
+                                <td id="resumo-nubank-rendeu" style="color: var(--accent-gold);">R$ 0,00</td>
+                                <td id="resumo-nubank-total" style="font-weight: 700;">R$ 0,00</td>
+                            </tr>
+                            <tr>
+                                <td>Itaú</td>
+                                <td id="resumo-itau-principal">R$ 0,00</td>
+                                <td id="resumo-itau-rendeu" style="color: var(--accent-gold);">R$ 0,00</td>
+                                <td id="resumo-itau-total" style="font-weight: 700;">R$ 0,00</td>
+                            </tr>
+                            <tr>
+                                <td>BTG</td>
+                                <td id="resumo-btg-principal">R$ 0,00</td>
+                                <td id="resumo-btg-rendeu" style="color: var(--accent-gold);">R$ 0,00</td>
+                                <td id="resumo-btg-total" style="font-weight: 700;">R$ 0,00</td>
+                            </tr>
+                            <tr>
+                                <td>TOTAL</td>
+                                <td id="resumo-total-principal">R$ 0,00</td>
+                                <td id="resumo-total-rendeu" style="color: var(--accent-gold);">R$ 0,00</td>
+                                <td id="resumo-total-geral" style="color: var(--accent-gold); font-size: 1.1em;">R$ 0,00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Charts -->
+                <div class="chart-card">
+                    <div class="chart-title">Evolução Mensal</div>
+                    <div class="chart-wrapper large">
+                        <canvas id="chart-evolucao"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Distribuição de Gastos</div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-categorias"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="section-header">
+                    <div class="section-title">Atividade Recente</div>
+                    <button class="section-action" onclick="openModal('transaction')">+ Novo</button>
+                </div>
+                <div class="list-container" id="recent-activity">
+                    <div class="empty-state">
+                        <div class="empty-icon">◆</div>
+                        <div class="empty-text">Nenhuma transação registrada</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: NUBANK -->
+            <div id="view-nubank" class="view-content">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('nubank', 'credito')">Crédito</button>
+                    <button class="tab" onclick="switchTab('nubank', 'cofrinho')">Cofrinho</button>
+                </div>
+
+                <!-- Crédito Tab -->
+                <div id="nubank-tab-credito">
+                    <div class="balance-card">
+                        <div class="balance-label">Limite Disponível</div>
+                        <div class="balance-value positive" id="nubank-disponivel">R$ 0,00</div>
+                        <div class="progress-container">
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" id="nubank-progress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-text">
+                                <span id="nubank-usado">R$ 0,00 usado</span>
+                                <span id="nubank-limite-total">Limite: R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Gastos Fixos/Mês</div>
+                            <div class="stat-value warning" id="nubank-fixos">R$ 0,00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Parcelas/Mês</div>
+                            <div class="stat-value negative" id="nubank-parcelas">R$ 0,00</div>
+                        </div>
+                    </div>
+
+                    <div class="form-card">
+                        <div class="input-group">
+                            <label class="input-label">Configurar Limite</label>
+                            <input type="number" class="input-field" id="input-nubank-limite" placeholder="0,00" step="0.01">
+                        </div>
+                        <button class="btn btn-primary" onclick="salvarLimiteNubank()">Salvar Limite</button>
+                    </div>
+
+                    <div class="section-header">
+                        <div class="section-title">Nova Parcela</div>
+                    </div>
+                    <div class="form-card">
+                        <div class="input-group">
+                            <label class="input-label">Descrição</label>
+                            <input type="text" class="input-field" id="input-parcela-desc" placeholder="Ex: iPhone">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Valor da Parcela</label>
+                            <input type="number" class="input-field" id="input-parcela-valor" placeholder="0,00" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Número de Parcelas</label>
+                            <input type="number" class="input-field" id="input-parcela-num" placeholder="12" min="1" max="24">
+                        </div>
+                        <button class="btn btn-primary" onclick="adicionarParcelaNubank()">Adicionar Parcela</button>
+                    </div>
+
+                    <div class="section-header">
+                        <div class="section-title">Nova Assinatura</div>
+                    </div>
+                    <div class="form-card">
+                        <div class="input-group">
+                            <label class="input-label">Descrição</label>
+                            <input type="text" class="input-field" id="input-fixo-desc" placeholder="Ex: Netflix">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Valor Mensal</label>
+                            <input type="number" class="input-field" id="input-fixo-valor" placeholder="0,00" step="0.01">
+                        </div>
+                        <button class="btn btn-primary" onclick="adicionarGastoFixo()">Adicionar Assinatura</button>
+                    </div>
+
+                    <div class="section-header">
+                        <div class="section-title">Parcelas Ativas</div>
+                    </div>
+                    <div class="list-container" id="lista-parcelas"></div>
+
+                    <div class="section-header">
+                        <div class="section-title">Assinaturas</div>
+                    </div>
+                    <div class="list-container" id="lista-fixos"></div>
+
+                    <div class="chart-card">
+                        <div class="chart-title">Gastos por Categoria</div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-nubank-cat"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cofrinho Tab -->
+                <div id="nubank-tab-cofrinho" class="hidden">
+                    <div class="balance-card">
+                        <div class="balance-label">Cofrinho Nubank</div>
+                        <div class="balance-value positive" id="nubank-cof-total">R$ 0,00</div>
+                        <div class="balance-row">
+                            <div class="balance-col">
+                                <div class="balance-col-label">Principal</div>
+                                <div class="balance-col-value neutral" id="nubank-cof-principal">R$ 0,00</div>
+                            </div>
+                            <div class="balance-col">
+                                <div class="balance-col-label">Rendimentos</div>
+                                <div class="balance-col-value positive" id="nubank-cof-rendeu">R$ 0,00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-card">
+                        <div class="input-group">
+                            <label class="input-label">Valor Principal</label>
+                            <input type="number" class="input-field" id="input-cof-nubank-principal" placeholder="0,00" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">% do CDI</label>
+                            <input type="number" class="input-field" id="input-cof-nubank-perc" value="100" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Data de Início</label>
+                            <input type="date" class="input-field" id="input-cof-nubank-inicio">
+                        </div>
+                        <button class="btn btn-gold" onclick="salvarCofrinho('nubank')">Atualizar Cofrinho</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: ITAÚ -->
+            <div id="view-itau" class="view-content">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('itau', 'conta')">Conta</button>
+                    <button class="tab" onclick="switchTab('itau', 'cofrinho')">Cofrinho</button>
+                </div>
+
+                <!-- Conta Tab -->
+                <div id="itau-tab-conta">
+                    <div class="balance-card">
+                        <div class="balance-label">Saldo em Conta</div>
+                        <div class="balance-value positive" id="itau-saldo">R$ 0,00</div>
+                        <div class="balance-row">
+                            <div class="balance-col">
+                                <div class="balance-col-label">Gastos no Mês</div>
+                                <div class="balance-col-value negative" id="itau-gasto">R$ 0,00</div>
+                            </div>
+                            <div class="balance-col">
+                                <div class="balance-col-label">Disponível</div>
+                                <div class="balance-col-value neutral" id="itau-disponivel">R$ 0,00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-card">
+                        <div class="input-group">
+                            <label class="input-label">Atualizar Saldo</label>
+                            <input type="number" class="input-field" id="input-itau-saldo" placeholder="0,00" step="0.01">
+                        </div>
+                        <button class="btn btn-primary" onclick="atualizarSaldoItau()">Atualizar Saldo</button>
+                    </div>
+
+                    <div class="section-header">
+                        <div class="section-title">Novo Gasto (Débito)</div>
+                    </div>
+                    <div class="form-card">
+                        <div class="input-group">
+                            <label class="input-label">Categoria</label>
+                            <select class="input-field" id="input-itau-categoria">
+                                <option value="Alimentação">Alimentação</option>
+                                <option value="Transporte">Transporte</option>
+                                <option value="Saúde">Saúde</option>
+                                <option value="Lazer">Lazer</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Valor</label>
+                            <input type="number" class="input-field" id="input-itau-valor" placeholder="0,00" step="0.01">
+                        </div>
+                        <button class="btn btn-primary" onclick="adicionarGastoItau()">Adicionar Gasto</button>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title">Gastos por Categoria</div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-itau-cat"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cofrinho Tab -->
+                <div id="itau-tab-cofrinho" class="hidden">
+                    <div class="balance-card">
+                        <div class="balance-label">Cofrinho Itaú</div>
+                        <div class="balance-value positive" id="itau-cof-total">R$ 0,00</div>
+                        <div class="balance-row">
+                            <div class="balance-col">
+                                <div class="balance-col-label">Principal</div>
+                                <div class="balance-col-value neutral" id="itau-cof-principal">R$ 0,00</div>
+                            </div>
+                            <div class="balance-col">
+                                <div class="balance-col-label">Rendimentos</div>
+                                <div class="balance-col-value positive" id="itau-cof-rendeu">R$ 0,00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-card">
+                        <div class="input-group">
+                            <label class="input-label">Valor Principal</label>
+                            <input type="number" class="input-field" id="input-cof-itau-principal" placeholder="0,00" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">% do CDI</label>
+                            <input type="number" class="input-field" id="input-cof-itau-perc" value="100" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Data de Início</label>
+                            <input type="date" class="input-field" id="input-cof-itau-inicio">
+                        </div>
+                        <button class="btn btn-gold" onclick="salvarCofrinho('itau')">Atualizar Cofrinho</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: BTG -->
+            <div id="view-btg" class="view-content">
+                <div class="balance-card">
+                    <div class="balance-label">Patrimônio BTG</div>
+                    <div class="balance-value positive" id="btg-patrimonio">R$ 0,00</div>
+                    <div class="balance-row">
+                        <div class="balance-col">
+                            <div class="balance-col-label">Lucro/Prejuízo</div>
+                            <div class="balance-col-value" id="btg-lucro">R$ 0,00</div>
+                        </div>
+                        <div class="balance-col">
+                            <div class="balance-col-label">Rentabilidade</div>
+                            <div class="balance-col-value" id="btg-rent">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Dividendos/Mês</div>
+                        <div class="stat-value positive" id="btg-div-mes">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Dividendos Acum.</div>
+                        <div class="stat-value positive" id="btg-div-acum">R$ 0,00</div>
+                    </div>
+                </div>
+
+                <!-- Cofrinho BTG -->
+                <div class="balance-card">
+                    <div class="balance-label">Cofrinho BTG</div>
+                    <div class="balance-value positive" id="btg-cof-total">R$ 0,00</div>
+                    <div class="balance-row">
+                        <div class="balance-col">
+                            <div class="balance-col-label">Principal</div>
+                            <div class="balance-col-value neutral" id="btg-cof-principal">R$ 0,00</div>
+                        </div>
+                        <div class="balance-col">
+                            <div class="balance-col-label">Rendimentos</div>
+                            <div class="balance-col-value positive" id="btg-cof-rendeu">R$ 0,00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <div class="input-group">
+                        <label class="input-label">Valor Principal</label>
+                        <input type="number" class="input-field" id="input-cof-btg-principal" placeholder="0,00" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">% do CDI</label>
+                        <input type="number" class="input-field" id="input-cof-btg-perc" value="100" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Data de Início</label>
+                        <input type="date" class="input-field" id="input-cof-btg-inicio">
+                    </div>
+                    <button class="btn btn-gold" onclick="salvarCofrinho('btg')">Atualizar Cofrinho</button>
+                </div>
+
+                <div class="section-header">
+                    <div class="section-title">Nova Ação</div>
+                </div>
+                <div class="form-card">
+                    <div class="input-group">
+                        <label class="input-label">Ticker</label>
+                        <input type="text" class="input-field" id="input-acao-ticker" placeholder="PETR4" style="text-transform: uppercase;">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Quantidade</label>
+                        <input type="number" class="input-field" id="input-acao-qtd" placeholder="100" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Preço Médio</label>
+                        <input type="number" class="input-field" id="input-acao-pm" placeholder="0,00" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Preço Atual</label>
+                        <input type="number" class="input-field" id="input-acao-atual" placeholder="0,00" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Dividendo Mensal/Ação</label>
+                        <input type="number" class="input-field" id="input-acao-div" placeholder="0,00" step="0.01">
+                    </div>
+                    <button class="btn btn-primary" onclick="adicionarAcao()">Adicionar Ação</button>
+                </div>
+
+                <div class="section-header">
+                    <div class="section-title">Carteira</div>
+                </div>
+                <div class="list-container" id="lista-acoes"></div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Distribuição da Carteira</div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-btg-carteira"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: DAY TRADE -->
+            <div id="view-daytrade" class="view-content">
+                <div class="balance-card">
+                    <div class="balance-label">Saldo em Conta</div>
+                    <div class="balance-value neutral" id="dt-saldo">R$ 0,00</div>
+                    <div class="balance-row">
+                        <div class="balance-col">
+                            <div class="balance-col-label">Lucro/Prejuízo</div>
+                            <div class="balance-col-value" id="dt-lucro">R$ 0,00</div>
+                        </div>
+                        <div class="balance-col">
+                            <div class="balance-col-label">Rentabilidade</div>
+                            <div class="balance-col-value" id="dt-rent">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Dias Positivos</div>
+                        <div class="stat-value positive" id="dt-dias-pos">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Dias Negativos</div>
+                        <div class="stat-value negative" id="dt-dias-neg">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Taxa de Acerto</div>
+                        <div class="stat-value positive" id="dt-win-rate">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Custos/Mês</div>
+                        <div class="stat-value warning" id="dt-custos">R$ 0,00</div>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <div class="input-group">
+                        <label class="input-label">Saldo Inicial</label>
+                        <input type="number" class="input-field" id="input-dt-saldo" placeholder="0,00" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Custo por Contrato</label>
+                        <input type="number" class="input-field" id="input-dt-custo" placeholder="0,50" value="0.50" step="0.01">
+                    </div>
+                    <button class="btn btn-primary" onclick="configurarDayTrade()">Salvar Configurações</button>
+                </div>
+
+                <div class="section-header">
+                    <div class="section-title">Nova Operação</div>
+                </div>
+                <div class="form-card">
+                    <div class="input-group">
+                        <label class="input-label">Data</label>
+                        <input type="date" class="input-field" id="input-dt-data">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Tipo</label>
+                        <select class="input-field" id="input-dt-tipo">
+                            <option value="lucro">Lucro</option>
+                            <option value="prejuizo">Prejuízo</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Valor Bruto</label>
+                        <input type="number" class="input-field" id="input-dt-valor" placeholder="0,00" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Contratos</label>
+                        <input type="number" class="input-field" id="input-dt-contratos" placeholder="1" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Observação</label>
+                        <input type="text" class="input-field" id="input-dt-obs" placeholder="Ex: Rompimento de resistência">
+                    </div>
+                    <button class="btn btn-primary" onclick="adicionarOperacaoDT()">Adicionar Operação</button>
+                </div>
+
+                <div class="section-header">
+                    <div class="section-title">Histórico</div>
+                </div>
+                <div class="list-container" id="lista-dt"></div>
+
+                <div class="chart-card">
+                    <div class="chart-title">Evolução do Saldo</div>
+                    <div class="chart-wrapper large">
+                        <canvas id="chart-dt-evolucao"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-container">
+            <div class="nav-items">
+                <button class="nav-item active" onclick="switchView('overview')">
+                    <span class="nav-icon">◆</span>
+                    <span>Visão Geral</span>
+                </button>
+                <button class="nav-item" onclick="switchView('nubank')">
+                    <span class="nav-icon">N</span>
+                    <span>Nubank</span>
+                </button>
+                <button class="nav-item" onclick="switchView('itau')">
+                    <span class="nav-icon">I</span>
+                    <span>Itaú</span>
+                </button>
+                <button class="nav-item" onclick="switchView('btg')">
+                    <span class="nav-icon">B</span>
+                    <span>BTG</span>
+                </button>
+                <button class="nav-item" onclick="switchView('daytrade')">
+                    <span class="nav-icon">D</span>
+                    <span>Day Trade</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal-overlay" id="modal-transaction">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Nova Transação</div>
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Tipo</label>
+                    <select class="input-field" id="modal-tipo">
+                        <option value="receita">Receita</option>
+                        <option value="despesa">Despesa</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Categoria</label>
+                    <select class="input-field" id="modal-categoria">
+                        <option value="Salário">Salário</option>
+                        <option value="Freelas">Freelas</option>
+                        <option value="Rendimentos">Rendimentos</option>
+                        <option value="Alimentação">Alimentação</option>
+                        <option value="Transporte">Transporte</option>
+                        <option value="Moradia">Moradia</option>
+                        <option value="Lazer">Lazer</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Valor</label>
+                    <input type="number" class="input-field" id="modal-valor" placeholder="0,00" step="0.01">
+                </div>
+                <button class="btn btn-primary mt-16" onclick="salvarTransacao()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        let dados = {
+            meses: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
+            receitas: Array(12).fill(0),
+            despesas: Array(12).fill(0),
+            categorias: {},
+            nubank: {
+                limite: 0,
+                gasto: 0,
+                despesasMensais: Array(12).fill(0),
+                parcelas: [],
+                gastosFixos: [],
+                categorias: {}
+            },
+            itau: {
+                saldo: 0,
+                gasto: 0,
+                categorias: {}
+            },
+            btg: {
+                acoes: [],
+                dividendosAcumulados: 0,
+                mesInicioAcumulacao: new Date().getMonth()
+            },
+            dayTrade: {
+                saldoInicial: 0,
+                saldoAtual: 0,
+                custoContrato: 0.5,
+                operacoes: []
+            },
+            cofrinhos: {
+                cdiAnual: 10.65,
+                nubank: { principal: 0, percCDI: 100, dataInicio: null, total: 0, rendeu: 0 },
+                itau: { principal: 0, percCDI: 100, dataInicio: null, total: 0, rendeu: 0 },
+                btg: { principal: 0, percCDI: 100, dataInicio: null, total: 0, rendeu: 0 }
+            },
+            historico: []
+        };
+
+        let currentView = 'overview';
+        let currentMonth = new Date().getMonth();
+        let charts = {};
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarDados();
+            initPeriodSelector();
+            initCharts();
+            updateAll();
+            
+            // Set default date
+            document.getElementById('input-dt-data').value = new Date().toISOString().split('T')[0];
+        });
+
+        function initPeriodSelector() {
+            const container = document.getElementById('periodSelector');
+            dados.meses.forEach((mes, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'period-btn' + (idx === currentMonth ? ' active' : '');
+                btn.textContent = mes;
+                btn.onclick = () => setMonth(idx);
+                container.appendChild(btn);
+            });
+        }
+
+        function setMonth(idx) {
+            currentMonth = idx;
+            document.querySelectorAll('.period-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === idx);
+            });
+            updateAll();
+        }
+
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${view}`).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            updateAll();
+        }
+
+        function switchTab(banco, tab) {
+            event.target.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll(`[id^="${banco}-tab-"]`).forEach(el => el.classList.add('hidden'));
+            document.getElementById(`${banco}-tab-${tab}`).classList.remove('hidden');
+        }
+
+        function openModal(id) {
+            document.getElementById(`modal-${id}`).classList.add('active');
+        }
+
+        function closeModal() {
+            document.querySelector('.modal-overlay.active')?.classList.remove('active');
+        }
+
+        // Calculations
+        function calcularCofrinho(banco) {
+            const cof = dados.cofrinhos[banco];
+            if (!cof.dataInicio || cof.principal <= 0) {
+                cof.total = cof.principal;
+                cof.rendeu = 0;
+                return;
+            }
+            
+            const taxaDiaria = Math.pow(1 + dados.cofrinhos.cdiAnual / 100, 1 / 252) - 1;
+            const taxaEfetiva = taxaDiaria * (cof.percCDI / 100);
+            const hoje = new Date();
+            const inicio = new Date(cof.dataInicio);
+            const dias = Math.max(0, Math.ceil((hoje - inicio) / (1000 * 60 * 60 * 24)));
+            
+            cof.total = cof.principal * Math.pow(1 + taxaEfetiva, dias);
+            cof.rendeu = cof.total - cof.principal;
+        }
+
+        function calcularGastosNubankMes() {
+            let gastoMes = dados.nubank.despesasMensais[currentMonth] || 0;
+            
+            dados.nubank.parcelas.forEach(p => {
+                const mesFim = p.mesInicio + p.numParcelas - 1;
+                if (currentMonth >= p.mesInicio && currentMonth <= mesFim) {
+                    gastoMes += p.valorParcela;
+                }
+            });
+            
+            dados.nubank.gastosFixos.forEach(g => {
+                if (currentMonth >= g.mesInicio) {
+                    gastoMes += g.valor;
+                }
+            });
+            
+            return gastoMes;
+        }
+
+        function calcularDividendos() {
+            let mensal = 0;
+            dados.btg.acoes.forEach(a => {
+                mensal += (a.dividendosMensal || 0) * a.quantidade;
+            });
+            
+            let acumulado = 0;
+            dados.btg.acoes.forEach(a => {
+                const mesCompra = a.mesCompra || dados.btg.mesInicioAcumulacao;
+                const meses = Math.max(0, currentMonth - mesCompra);
+                acumulado += (a.dividendosMensal || 0) * a.quantidade * meses;
+            });
+            
+            return { mensal, acumulado };
+        }
+
+        // Update UI
+        function updateAll() {
+            ['nubank', 'itau', 'btg'].forEach(b => calcularCofrinho(b));
+            
+            if (currentView === 'overview') updateOverview();
+            else if (currentView === 'nubank') updateNubank();
+            else if (currentView === 'itau') updateItau();
+            else if (currentView === 'btg') updateBTG();
+            else if (currentView === 'daytrade') updateDayTrade();
+            
+            salvarDados();
+        }
+
+        function updateOverview() {
+            const rec = dados.receitas[currentMonth];
+            const des = dados.despesas[currentMonth];
+            const eco = rec - des;
+            const perc = rec > 0 ? ((eco / rec) * 100).toFixed(1) : 0;
+            
+            document.getElementById('total-receitas').textContent = formatMoney(rec);
+            document.getElementById('total-despesas').textContent = formatMoney(des);
+            document.getElementById('total-economia').textContent = formatMoney(eco);
+            document.getElementById('total-perc').textContent = perc + '%';
+            
+            document.getElementById('total-economia').className = 'stat-value ' + (eco >= 0 ? 'positive' : 'negative');
+            document.getElementById('total-perc').className = 'stat-value ' + (eco >= 0 ? 'positive' : 'negative');
+            
+            const cofTotal = dados.cofrinhos.nubank.total + dados.cofrinhos.itau.total + dados.cofrinhos.btg.total;
+            const invTotal = dados.btg.acoes.reduce((t, a) => t + a.quantidade * a.precoAtual, 0);
+            const patTotal = cofTotal + invTotal + dados.itau.saldo;
+            
+            document.getElementById('total-cofrinhos').textContent = formatMoney(cofTotal);
+            document.getElementById('total-investimentos').textContent = formatMoney(invTotal);
+            document.getElementById('total-patrimonio').textContent = formatMoney(patTotal);
+            
+            // Update cofrinhos table
+            ['nubank', 'itau', 'btg'].forEach(b => {
+                const cof = dados.cofrinhos[b];
+                document.getElementById(`resumo-${b}-principal`).textContent = formatMoney(cof.principal);
+                document.getElementById(`resumo-${b}-rendeu`).textContent = formatMoney(cof.rendeu);
+                document.getElementById(`resumo-${b}-total`).textContent = formatMoney(cof.total);
+            });
+            
+            const totalPrincipal = dados.cofrinhos.nubank.principal + dados.cofrinhos.itau.principal + dados.cofrinhos.btg.principal;
+            const totalRendeu = dados.cofrinhos.nubank.rendeu + dados.cofrinhos.itau.rendeu + dados.cofrinhos.btg.rendeu;
+            document.getElementById('resumo-total-principal').textContent = formatMoney(totalPrincipal);
+            document.getElementById('resumo-total-rendeu').textContent = formatMoney(totalRendeu);
+            document.getElementById('resumo-total-geral').textContent = formatMoney(cofTotal);
+            
+            // Charts
+            updateChart('evolucao', {
+                labels: dados.meses,
+                datasets: [
+                    { label: 'Receitas', data: dados.receitas, backgroundColor: '#d4af37', borderRadius: 4 },
+                    { label: 'Despesas', data: dados.despesas, backgroundColor: '#ef4444', borderRadius: 4 }
+                ]
+            });
+            
+            const catLabels = Object.keys(dados.categorias);
+            updateChart('categorias', {
+                labels: catLabels.length ? catLabels : ['Sem dados'],
+                datasets: [{
+                    data: catLabels.length ? Object.values(dados.categorias) : [1],
+                    backgroundColor: ['#d4af37', '#22c55e', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6'],
+                    borderWidth: 0
+                }]
+            });
+            
+            renderHistorico();
+        }
+
+        function updateNubank() {
+            const gastoMes = calcularGastosNubankMes();
+            const limite = dados.nubank.limite;
+            const disponivel = Math.max(0, limite - gastoMes);
+            const perc = limite > 0 ? (gastoMes / limite) * 100 : 0;
+            
+            document.getElementById('nubank-disponivel').textContent = formatMoney(disponivel);
+            document.getElementById('nubank-usado').textContent = formatMoney(gastoMes) + ' usado';
+            document.getElementById('nubank-limite-total').textContent = 'Limite: ' + formatMoney(limite);
+            
+            const bar = document.getElementById('nubank-progress');
+            bar.style.width = Math.min(100, perc) + '%';
+            bar.className = 'progress-bar-fill' + (perc > 90 ? ' danger' : perc > 70 ? ' warning' : '');
+            
+            const fixosTotal = dados.nubank.gastosFixos.reduce((s, g) => s + g.valor, 0);
+            const parcelasTotal = dados.nubank.parcelas.reduce((s, p) => {
+                const mesFim = p.mesInicio + p.numParcelas - 1;
+                return s + (currentMonth >= p.mesInicio && currentMonth <= mesFim ? p.valorParcela : 0);
+            }, 0);
+            
+            document.getElementById('nubank-fixos').textContent = formatMoney(fixosTotal);
+            document.getElementById('nubank-parcelas').textContent = formatMoney(parcelasTotal);
+            
+            // Cofrinho
+            document.getElementById('nubank-cof-total').textContent = formatMoney(dados.cofrinhos.nubank.total);
+            document.getElementById('nubank-cof-principal').textContent = formatMoney(dados.cofrinhos.nubank.principal);
+            document.getElementById('nubank-cof-rendeu').textContent = formatMoney(dados.cofrinhos.nubank.rendeu);
+            
+            // Inputs
+            document.getElementById('input-nubank-limite').value = dados.nubank.limite || '';
+            document.getElementById('input-cof-nubank-principal').value = dados.cofrinhos.nubank.principal || '';
+            document.getElementById('input-cof-nubank-perc').value = dados.cofrinhos.nubank.percCDI || 100;
+            document.getElementById('input-cof-nubank-inicio').value = dados.cofrinhos.nubank.dataInicio || '';
+            
+            renderParcelas();
+            renderFixos();
+            
+            updateChart('nubank-cat', {
+                labels: Object.keys(dados.nubank.categorias).length ? Object.keys(dados.nubank.categorias) : ['Sem dados'],
+                datasets: [{
+                    data: Object.values(dados.nubank.categorias).length ? Object.values(dados.nubank.categorias) : [1],
+                    backgroundColor: ['#d4af37', '#22c55e', '#3b82f6', '#ef4444', '#f59e0b'],
+                    borderWidth: 0
+                }]
+            });
+        }
+
+        function updateItau() {
+            const saldo = dados.itau.saldo;
+            const gasto = dados.itau.gasto;
+            
+            document.getElementById('itau-saldo').textContent = formatMoney(saldo);
+            document.getElementById('itau-gasto').textContent = formatMoney(gasto);
+            document.getElementById('itau-disponivel').textContent = formatMoney(saldo - gasto);
+            
+            // Cofrinho
+            document.getElementById('itau-cof-total').textContent = formatMoney(dados.cofrinhos.itau.total);
+            document.getElementById('itau-cof-principal').textContent = formatMoney(dados.cofrinhos.itau.principal);
+            document.getElementById('itau-cof-rendeu').textContent = formatMoney(dados.cofrinhos.itau.rendeu);
+            
+            // Inputs
+            document.getElementById('input-itau-saldo').value = dados.itau.saldo || '';
+            document.getElementById('input-cof-itau-principal').value = dados.cofrinhos.itau.principal || '';
+            document.getElementById('input-cof-itau-perc').value = dados.cofrinhos.itau.percCDI || 100;
+            document.getElementById('input-cof-itau-inicio').value = dados.cofrinhos.itau.dataInicio || '';
+            
+            updateChart('itau-cat', {
+                labels: Object.keys(dados.itau.categorias).length ? Object.keys(dados.itau.categorias) : ['Sem dados'],
+                datasets: [{
+                    data: Object.values(dados.itau.categorias).length ? Object.values(dados.itau.categorias) : [1],
+                    backgroundColor: ['#d4af37', '#22c55e', '#3b82f6', '#ef4444', '#f59e0b'],
+                    borderWidth: 0
+                }]
+            });
+        }
+
+        function updateBTG() {
+            const patrimonio = dados.btg.acoes.reduce((t, a) => t + a.quantidade * a.precoAtual, 0);
+            const investido = dados.btg.acoes.reduce((t, a) => t + a.quantidade * a.precoMedio, 0);
+            const lucro = patrimonio - investido;
+            const rent = investido > 0 ? ((lucro / investido) * 100).toFixed(2) : 0;
+            const divs = calcularDividendos();
+            
+            document.getElementById('btg-patrimonio').textContent = formatMoney(patrimonio);
+            
+            const lucroEl = document.getElementById('btg-lucro');
+            lucroEl.textContent = formatMoney(lucro);
+            lucroEl.className = 'balance-col-value ' + (lucro >= 0 ? 'positive' : 'negative');
+            
+            const rentEl = document.getElementById('btg-rent');
+            rentEl.textContent = rent + '%';
+            rentEl.className = 'balance-col-value ' + (lucro >= 0 ? 'positive' : 'negative');
+            
+            document.getElementById('btg-div-mes').textContent = formatMoney(divs.mensal);
+            document.getElementById('btg-div-acum').textContent = formatMoney(divs.acumulado);
+            
+            // Cofrinho
+            document.getElementById('btg-cof-total').textContent = formatMoney(dados.cofrinhos.btg.total);
+            document.getElementById('btg-cof-principal').textContent = formatMoney(dados.cofrinhos.btg.principal);
+            document.getElementById('btg-cof-rendeu').textContent = formatMoney(dados.cofrinhos.btg.rendeu);
+            
+            // Inputs
+            document.getElementById('input-cof-btg-principal').value = dados.cofrinhos.btg.principal || '';
+            document.getElementById('input-cof-btg-perc').value = dados.cofrinhos.btg.percCDI || 100;
+            document.getElementById('input-cof-btg-inicio').value = dados.cofrinhos.btg.dataInicio || '';
+            
+            renderAcoes();
+            
+            updateChart('btg-carteira', {
+                labels: dados.btg.acoes.map(a => a.ticker).length ? dados.btg.acoes.map(a => a.ticker) : ['Sem dados'],
+                datasets: [{
+                    data: dados.btg.acoes.length ? dados.btg.acoes.map(a => a.quantidade * a.precoAtual) : [1],
+                    backgroundColor: ['#d4af37', '#22c55e', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6'],
+                    borderWidth: 0
+                }]
+            });
+        }
+
+        function updateDayTrade() {
+            const ops = currentMonth === 'ano' ? dados.dayTrade.operacoes : dados.dayTrade.operacoes.filter(o => o.mes === currentMonth);
+            
+            const lucroBruto = ops.reduce((s, o) => s + (o.tipo === 'lucro' ? o.valor : -o.valor), 0);
+            const custos = ops.reduce((s, o) => s + o.custoTotal, 0);
+            const lucroLiquido = lucroBruto - custos;
+            const saldoAtual = dados.dayTrade.saldoInicial + lucroLiquido;
+            const rent = dados.dayTrade.saldoInicial > 0 ? ((lucroLiquido / dados.dayTrade.saldoInicial) * 100).toFixed(2) : 0;
+            
+            const diasPos = ops.filter(o => o.tipo === 'lucro').length;
+            const diasNeg = ops.filter(o => o.tipo === 'prejuizo').length;
+            const total = ops.length;
+            const winRate = total > 0 ? ((diasPos / total) * 100).toFixed(1) : 0;
+            
+            document.getElementById('dt-saldo').textContent = formatMoney(saldoAtual);
+            
+            const lucroEl = document.getElementById('dt-lucro');
+            lucroEl.textContent = formatMoney(lucroLiquido);
+            lucroEl.className = 'balance-col-value ' + (lucroLiquido >= 0 ? 'positive' : 'negative');
+            
+            const rentEl = document.getElementById('dt-rent');
+            rentEl.textContent = rent + '%';
+            rentEl.className = 'balance-col-value ' + (rent >= 0 ? 'positive' : 'negative');
+            
+            document.getElementById('dt-dias-pos').textContent = diasPos;
+            document.getElementById('dt-dias-neg').textContent = diasNeg;
+            document.getElementById('dt-win-rate').textContent = winRate + '%';
+            document.getElementById('dt-custos').textContent = formatMoney(custos);
+            
+            // Inputs
+            document.getElementById('input-dt-saldo').value = dados.dayTrade.saldoInicial || '';
+            document.getElementById('input-dt-custo').value = dados.dayTrade.custoContrato || 0.5;
+            
+            renderOperacoesDT();
+            
+            // Chart evolução
+            const opsOrd = [...dados.dayTrade.operacoes].sort((a, b) => new Date(a.data) - new Date(b.data));
+            let saldo = dados.dayTrade.saldoInicial;
+            const saldos = [saldo];
+            const datas = ['Início'];
+            
+            opsOrd.forEach(o => {
+                saldo += o.valorLiquido;
+                saldos.push(saldo);
+                datas.push(new Date(o.data).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}));
+            });
+            
+            updateChart('dt-evolucao', {
+                labels: datas,
+                datasets: [{
+                    label: 'Saldo',
+                    data: saldos,
+                    borderColor: '#d4af37',
+                    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#d4af37'
+                }]
+            });
+        }
+
+        // Render Lists
+        function renderHistorico() {
+            const container = document.getElementById('recent-activity');
+            const recentes = dados.historico.slice(-10).reverse();
+            
+            if (!recentes.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">◆</div>
+                        <div class="empty-text">Nenhuma transação registrada</div>
+                    </div>`;
+                return;
+            }
+            
+            container.innerHTML = recentes.map(h => `
+                <div class="list-item">
+                    <div class="list-item-info">
+                        <div class="list-item-title">${h.categoria}</div>
+                        <div class="list-item-subtitle">${dados.meses[h.mes]} • ${h.tipo === 'receita' ? 'Receita' : 'Despesa'}</div>
+                    </div>
+                    <div class="list-item-value ${h.tipo === 'receita' ? 'positive' : 'negative'}">
+                        ${h.tipo === 'receita' ? '+' : '-'} ${formatMoney(h.valor)}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderParcelas() {
+            const container = document.getElementById('lista-parcelas');
+            if (!dados.nubank.parcelas.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">◆</div>
+                        <div class="empty-text">Nenhuma parcela ativa</div>
+                    </div>`;
+                return;
+            }
+            
+            const ordenadas = [...dados.nubank.parcelas].sort((a, b) => b.valorParcela - a.valorParcela);
+            container.innerHTML = ordenadas.map((p, i) => {
+                const idx = dados.nubank.parcelas.indexOf(p);
+                const mesFim = p.mesInicio + p.numParcelas - 1;
+                const isAtiva = currentMonth >= p.mesInicio && currentMonth <= mesFim;
+                
+                return `
+                    <div class="list-item" style="${isAtiva ? 'background: rgba(212, 175, 55, 0.05);' : ''}">
+                        <div class="list-item-info">
+                            <div class="list-item-title">${p.descricao}</div>
+                            <div class="list-item-subtitle">${p.numParcelas}x de ${formatMoney(p.valorParcela)} • ${dados.meses[p.mesInicio]} a ${dados.meses[Math.min(11, mesFim)]}</div>
+                        </div>
+                        <div class="list-item-value negative">${formatMoney(p.valorParcela)}/mês</div>
+                        <div class="list-item-actions">
+                            <button class="btn-icon" onclick="editarParcela(${idx})">✏️</button>
+                            <button class="btn-icon delete" onclick="removerParcela(${idx})">🗑</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderFixos() {
+            const container = document.getElementById('lista-fixos');
+            if (!dados.nubank.gastosFixos.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">◆</div>
+                        <div class="empty-text">Nenhuma assinatura</div>
+                    </div>`;
+                return;
+            }
+            
+            container.innerHTML = dados.nubank.gastosFixos.map((g, i) => `
+                <div class="list-item">
+                    <div class="list-item-info">
+                        <div class="list-item-title">${g.descricao}</div>
+                        <div class="list-item-subtitle">Desde ${dados.meses[g.mesInicio]}</div>
+                    </div>
+                    <div class="list-item-value negative">${formatMoney(g.valor)}/mês</div>
+                    <div class="list-item-actions">
+                        <button class="btn-icon" onclick="editarFixo(${i})">✏️</button>
+                        <button class="btn-icon delete" onclick="removerFixo(${i})">🗑</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAcoes() {
+            const container = document.getElementById('lista-acoes');
+            if (!dados.btg.acoes.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">◆</div>
+                        <div class="empty-text">Nenhuma ação na carteira</div>
+                    </div>`;
+                return;
+            }
+            
+            container.innerHTML = dados.btg.acoes.map((a, i) => {
+                const inv = a.quantidade * a.precoMedio;
+                const atual = a.quantidade * a.precoAtual;
+                const lucro = atual - inv;
+                const rent = ((lucro / inv) * 100).toFixed(2);
+                const divMensal = (a.dividendosMensal || 0) * a.quantidade;
+                const mesCompra = a.mesCompra || dados.btg.mesInicioAcumulacao;
+                const meses = Math.max(0, currentMonth - mesCompra);
+                const divAcum = divMensal * meses;
+                
+                return `
+                    <div class="list-item" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <div class="list-item-info">
+                                <div class="list-item-title" style="font-size: 17px;">${a.ticker}</div>
+                                <div class="list-item-subtitle">${a.quantidade} ações • PM ${formatMoney(a.precoMedio)}</div>
+                            </div>
+                            <div class="list-item-value ${lucro >= 0 ? 'positive' : 'negative'}" style="font-size: 18px;">
+                                ${lucro >= 0 ? '+' : ''}${formatMoney(lucro)}
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: 100%; font-size: 12px; color: var(--text-secondary);">
+                            <div>Atual: ${formatMoney(a.precoAtual)}</div>
+                            <div>Posição: ${formatMoney(atual)}</div>
+                            <div>Rent: ${rent}%</div>
+                            <div>Div/mês: ${formatMoney(divMensal)}</div>
+                            <div style="grid-column: 1/-1; color: var(--accent-gold);">Div. Acumulado: ${formatMoney(divAcum)} (${meses} meses)</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; width: 100%;">
+                            <button class="btn btn-secondary" style="flex: 1; padding: 10px; font-size: 13px;" onclick="editarAcao(${i})">Editar</button>
+                            <button class="btn btn-danger" style="flex: 1; padding: 10px; font-size: 13px;" onclick="removerAcao(${i})">Remover</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderOperacoesDT() {
+            const container = document.getElementById('lista-dt');
+            const ops = currentMonth === 'ano' ? dados.dayTrade.operacoes : dados.dayTrade.operacoes.filter(o => o.mes === currentMonth);
+            
+            if (!ops.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">◆</div>
+                        <div class="empty-text">Nenhuma operação registrada</div>
+                    </div>`;
+                return;
+            }
+            
+            const ordenadas = [...ops].sort((a, b) => new Date(b.data) - new Date(a.data));
+            container.innerHTML = ordenadas.map(o => {
+                const idx = dados.dayTrade.operacoes.indexOf(o);
+                return `
+                    <div class="list-item" style="border-left: 3px solid ${o.tipo === 'lucro' ? '#22c55e' : '#ef4444'};">
+                        <div class="list-item-info">
+                            <div class="list-item-title">${o.tipo === 'lucro' ? '▲' : '▼'} ${new Date(o.data).toLocaleDateString('pt-BR')}</div>
+                            <div class="list-item-subtitle">${o.obs || 'Sem observação'} • ${o.contratos} contratos</div>
+                        </div>
+                        <div class="list-item-value ${o.tipo === 'lucro' ? 'positive' : 'negative'}">
+                            ${o.tipo === 'lucro' ? '+' : ''}${formatMoney(o.valorLiquido)}
+                        </div>
+                        <div class="list-item-actions">
+                            <button class="btn-icon" onclick="editarOperacaoDT(${idx})">✏️</button>
+                            <button class="btn-icon delete" onclick="removerOperacaoDT(${idx})">🗑</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Actions
+        function salvarTransacao() {
+            const tipo = document.getElementById('modal-tipo').value;
+            const cat = document.getElementById('modal-categoria').value;
+            const val = parseFloat(document.getElementById('modal-valor').value);
+            
+            if (!val || val <= 0) {
+                alert('Insira um valor válido');
+                return;
+            }
+            
+            if (tipo === 'receita') {
+                dados.receitas[currentMonth] += val;
+            } else {
+                dados.despesas[currentMonth] += val;
+                dados.categorias[cat] = (dados.categorias[cat] || 0) + val;
+                dados.nubank.gasto += val;
+                dados.nubank.despesasMensais[currentMonth] += val;
+                dados.nubank.categorias[cat] = (dados.nubank.categorias[cat] || 0) + val;
+            }
+            
+            dados.historico.push({ tipo, categoria: cat, valor: val, mes: currentMonth, timestamp: Date.now() });
+            
+            closeModal();
+            document.getElementById('modal-valor').value = '';
+            updateAll();
+        }
+
+        function salvarLimiteNubank() {
+            const val = parseFloat(document.getElementById('input-nubank-limite').value);
+            if (isNaN(val) || val < 0) return alert('Valor inválido');
+            dados.nubank.limite = val;
+            updateAll();
+        }
+
+        function adicionarParcelaNubank() {
+            const desc = document.getElementById('input-parcela-desc').value;
+            const val = parseFloat(document.getElementById('input-parcela-valor').value);
+            const num = parseInt(document.getElementById('input-parcela-num').value);
+            
+            if (!desc || !val || !num || val <= 0 || num <= 0) return alert('Preencha todos os campos');
+            
+            dados.nubank.parcelas.push({
+                descricao: desc,
+                valorParcela: val,
+                numParcelas: num,
+                valorTotal: val * num,
+                mesInicio: currentMonth
+            });
+            
+            document.getElementById('input-parcela-desc').value = '';
+            document.getElementById('input-parcela-valor').value = '';
+            document.getElementById('input-parcela-num').value = '';
+            updateAll();
+        }
+
+        function adicionarGastoFixo() {
+            const desc = document.getElementById('input-fixo-desc').value;
+            const val = parseFloat(document.getElementById('input-fixo-valor').value);
+            
+            if (!desc || !val || val <= 0) return alert('Preencha todos os campos');
+            
+            dados.nubank.gastosFixos.push({ descricao: desc, valor: val, mesInicio: currentMonth });
+            
+            document.getElementById('input-fixo-desc').value = '';
+            document.getElementById('input-fixo-valor').value = '';
+            updateAll();
+        }
+
+        function atualizarSaldoItau() {
+            const val = parseFloat(document.getElementById('input-itau-saldo').value);
+            if (isNaN(val) || val < 0) return alert('Valor inválido');
+            dados.itau.saldo = val;
+            updateAll();
+        }
+
+        function adicionarGastoItau() {
+            const cat = document.getElementById('input-itau-categoria').value;
+            const val = parseFloat(document.getElementById('input-itau-valor').value);
+            
+            if (!val || val <= 0) return alert('Insira um valor válido');
+            
+            dados.itau.gasto += val;
+            dados.itau.categorias[cat] = (dados.itau.categorias[cat] || 0) + val;
+            dados.despesas[currentMonth] += val;
+            dados.categorias[cat] = (dados.categorias[cat] || 0) + val;
+            
+            document.getElementById('input-itau-valor').value = '';
+            updateAll();
+        }
+
+        function salvarCofrinho(banco) {
+            const principal = parseFloat(document.getElementById(`input-cof-${banco}-principal`).value) || 0;
+            const perc = parseFloat(document.getElementById(`input-cof-${banco}-perc`).value) || 100;
+            const data = document.getElementById(`input-cof-${banco}-inicio`).value;
+            
+            dados.cofrinhos[banco] = { ...dados.cofrinhos[banco], principal, percCDI: perc, dataInicio: data };
+            updateAll();
+        }
+
+        function adicionarAcao() {
+            const ticker = document.getElementById('input-acao-ticker').value.toUpperCase();
+            const qtd = parseInt(document.getElementById('input-acao-qtd').value);
+            const pm = parseFloat(document.getElementById('input-acao-pm').value);
+            const atual = parseFloat(document.getElementById('input-acao-atual').value);
+            const div = parseFloat(document.getElementById('input-acao-div').value) || 0;
+            
+            if (!ticker || !qtd || !pm || !atual) return alert('Preencha todos os campos obrigatórios');
+            
+            dados.btg.acoes.push({ ticker, quantidade: qtd, precoMedio: pm, precoAtual: atual, dividendosMensal: div, mesCompra: currentMonth });
+            
+            document.getElementById('input-acao-ticker').value = '';
+            document.getElementById('input-acao-qtd').value = '';
+            document.getElementById('input-acao-pm').value = '';
+            document.getElementById('input-acao-atual').value = '';
+            document.getElementById('input-acao-div').value = '';
+            updateAll();
+        }
+
+        function configurarDayTrade() {
+            const saldo = parseFloat(document.getElementById('input-dt-saldo').value);
+            const custo = parseFloat(document.getElementById('input-dt-custo').value);
+            
+            if (isNaN(saldo) || saldo < 0 || isNaN(custo) || custo < 0) return alert('Valores inválidos');
+            
+            dados.dayTrade.saldoInicial = saldo;
+            dados.dayTrade.saldoAtual = saldo;
+            dados.dayTrade.custoContrato = custo;
+            updateAll();
+        }
+
+        function adicionarOperacaoDT() {
+            const data = document.getElementById('input-dt-data').value;
+            const tipo = document.getElementById('input-dt-tipo').value;
+            const valor = parseFloat(document.getElementById('input-dt-valor').value);
+            const contratos = parseInt(document.getElementById('input-dt-contratos').value);
+            const obs = document.getElementById('input-dt-obs').value;
+            
+            if (!data || !valor || valor <= 0 || !contratos || contratos <= 0) return alert('Preencha todos os campos');
+            
+            const custo = contratos * dados.dayTrade.custoContrato;
+            const liquido = tipo === 'lucro' ? valor - custo : -(valor + custo);
+            
+            dados.dayTrade.operacoes.push({
+                data, tipo, valor, contratos, custoTotal: custo, valorLiquido: liquido, obs, mes: currentMonth
+            });
+            
+            dados.dayTrade.saldoAtual += liquido;
+            
+            document.getElementById('input-dt-valor').value = '';
+            document.getElementById('input-dt-contratos').value = '';
+            document.getElementById('input-dt-obs').value = '';
+            updateAll();
+        }
+
+        // Edit/Remove
+        function editarParcela(idx) {
+            const p = dados.nubank.parcelas[idx];
+            const novoVal = prompt('Novo valor da parcela:', p.valorParcela);
+            if (novoVal === null) return;
+            const val = parseFloat(novoVal);
+            if (isNaN(val) || val <= 0) return alert('Valor inválido');
+            p.valorParcela = val;
+            p.valorTotal = val * p.numParcelas;
+            updateAll();
+        }
+
+        function removerParcela(idx) {
+            if (!confirm('Remover esta parcela?')) return;
+            dados.nubank.parcelas.splice(idx, 1);
+            updateAll();
+        }
+
+        function editarFixo(idx) {
+            const g = dados.nubank.gastosFixos[idx];
+            const novoVal = prompt('Novo valor:', g.valor);
+            if (novoVal === null) return;
+            const val = parseFloat(novoVal);
+            if (isNaN(val) || val <= 0) return alert('Valor inválido');
+            g.valor = val;
+            updateAll();
+        }
+
+        function removerFixo(idx) {
+            if (!confirm('Remover esta assinatura?')) return;
+            dados.nubank.gastosFixos.splice(idx, 1);
+            updateAll();
+        }
+
+        function editarAcao(idx) {
+            const a = dados.btg.acoes[idx];
+            const novoPreco = prompt('Novo preço atual:', a.precoAtual);
+            if (novoPreco === null) return;
+            const novoDiv = prompt('Novo dividendo mensal:', a.dividendosMensal || 0);
+            if (novoDiv === null) return;
+            
+            const p = parseFloat(novoPreco);
+            const d = parseFloat(novoDiv);
+            
+            if (isNaN(p) || p <= 0) return alert('Preço inválido');
+            a.precoAtual = p;
+            a.dividendosMensal = d;
+            updateAll();
+        }
+
+        function removerAcao(idx) {
+            if (!confirm('Remover esta ação?')) return;
+            dados.btg.acoes.splice(idx, 1);
+            updateAll();
+        }
+
+        function editarOperacaoDT(idx) {
+            const o = dados.dayTrade.operacoes[idx];
+            const novoTipo = confirm('Foi lucro?\nOK = Sim\nCancelar = Não') ? 'lucro' : 'prejuizo';
+            const novoVal = prompt('Valor:', o.valor);
+            if (novoVal === null) return;
+            const val = parseFloat(novoVal);
+            if (isNaN(val) || val <= 0) return alert('Valor inválido');
+            
+            dados.dayTrade.saldoAtual -= o.valorLiquido;
+            
+            o.tipo = novoTipo;
+            o.valor = val;
+            o.valorLiquido = novoTipo === 'lucro' ? val - o.custoTotal : -(val + o.custoTotal);
+            
+            dados.dayTrade.saldoAtual += o.valorLiquido;
+            updateAll();
+        }
+
+        function removerOperacaoDT(idx) {
+            if (!confirm('Remover esta operação?')) return;
+            const o = dados.dayTrade.operacoes[idx];
+            dados.dayTrade.saldoAtual -= o.valorLiquido;
+            dados.dayTrade.operacoes.splice(idx, 1);
+            updateAll();
+        }
+
+        // Charts
+        function initCharts() {
+            Chart.defaults.color = '#666';
+            Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+            
+            const configs = {
+                evolucao: { type: 'bar', labels: [], datasets: [] },
+                categorias: { type: 'doughnut', labels: [], datasets: [] },
+                'nubank-cat': { type: 'doughnut', labels: [], datasets: [] },
+                'itau-cat': { type: 'doughnut', labels: [], datasets: [] },
+                'btg-carteira': { type: 'doughnut', labels: [], datasets: [] },
+                'dt-evolucao': { type: 'line', labels: [], datasets: [] }
+            };
+            
+            Object.keys(configs).forEach(id => {
+                const ctx = document.getElementById(`chart-${id}`)?.getContext('2d');
+                if (ctx) {
+                    charts[id] = new Chart(ctx, {
+                        type: configs[id].type,
+                        data: configs[id],
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: configs[id].type === 'doughnut', position: 'bottom' }
+                            },
+                            scales: configs[id].type === 'doughnut' ? {} : {
+                                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.02)' } },
+                                x: { grid: { display: false } }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        function updateChart(name, data) {
+            if (charts[name]) {
+                charts[name].data = data;
+                charts[name].update();
+            }
+        }
+
+        // Utils
+        function formatMoney(val) {
+            return 'R$ ' + (val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function salvarDados() {
+            localStorage.setItem('wealthPro_v2', JSON.stringify(dados));
+        }
+
+        function carregarDados() {
+            const saved = localStorage.getItem('wealthPro_v2');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                dados = { ...dados, ...parsed };
+                if (!dados.nubank.parcelas) dados.nubank.parcelas = [];
+                if (!dados.nubank.gastosFixos) dados.nubank.gastosFixos = [];
+                if (!dados.historico) dados.historico = [];
+                if (!dados.dayTrade.operacoes) dados.dayTrade.operacoes = [];
+            }
+        }
+    </script>
+</body>
+</html>
