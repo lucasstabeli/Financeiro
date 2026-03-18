@@ -150,11 +150,19 @@
             border: none;
             font-size: 11px;
             font-weight: 600;
+            flex: 1;
         }
 
         .nav-item.active { color: var(--accent-gold); }
 
-        .nav-icon { font-size: 22px; }
+        .nav-icon { 
+            font-size: 20px; 
+            font-weight: 700;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         .content { padding: 0 16px; }
 
@@ -649,8 +657,8 @@
             <!-- VIEW: NUBANK -->
             <div id="view-nubank" class="view-content">
                 <div class="tabs">
-                    <button class="tab active" onclick="switchTab('nubank', 'credito')">Crédito</button>
-                    <button class="tab" onclick="switchTab('nubank', 'cofrinho')">Cofrinho</button>
+                    <button class="tab active" onclick="switchTab('nubank', 'credito', this)">Crédito</button>
+                    <button class="tab" onclick="switchTab('nubank', 'cofrinho', this)">Cofrinho</button>
                 </div>
 
                 <div id="nubank-tab-credito">
@@ -687,7 +695,6 @@
                         <button class="btn btn-primary" onclick="salvarLimiteNubank()">Salvar Limite</button>
                     </div>
 
-                    <!-- NOVO SISTEMA DE PARCELAS -->
                     <div class="form-card">
                         <h3 style="margin-bottom: 16px; font-size: 16px;">Adicionar Parcela</h3>
                         
@@ -719,21 +726,17 @@
                             </select>
                         </div>
 
-                        <!-- Opção Compra Nova -->
                         <div id="parcela-nova-options">
                             <div class="input-group">
                                 <label class="input-label">1ª Parcela em:</label>
-                                <select class="input-field" id="input-parcela-mes-inicio">
-                                    <!-- Preenchido via JS -->
-                                </select>
+                                <select class="input-field" id="input-parcela-mes-inicio"></select>
                             </div>
                         </div>
 
-                        <!-- Opção Compra em Andamento -->
                         <div id="parcela-andamento-options" class="hidden">
                             <div class="input-group">
                                 <label class="input-label">Já paguei quantas parcelas?</label>
-                                <input type="number" class="input-field" id="input-parcelas-pagas" placeholder="3" min="0" value="0">
+                                <input type="number" class="input-field" id="input-parcelas-pagas" placeholder="3" min="0" value="0" onchange="atualizarPreviewAndamento()">
                             </div>
                             <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
                                 O sistema calculará automaticamente: <br>
@@ -808,8 +811,8 @@
             <!-- VIEW: ITAÚ -->
             <div id="view-itau" class="view-content">
                 <div class="tabs">
-                    <button class="tab active" onclick="switchTab('itau', 'conta')">Conta</button>
-                    <button class="tab" onclick="switchTab('itau', 'cofrinho')">Cofrinho</button>
+                    <button class="tab active" onclick="switchTab('itau', 'conta', this)">Conta</button>
+                    <button class="tab" onclick="switchTab('itau', 'cofrinho', this)">Cofrinho</button>
                 </div>
 
                 <div id="itau-tab-conta">
@@ -985,21 +988,22 @@
             </div>
         </div>
 
+        <!-- NAVIGATION CORRIGIDA -->
         <div class="nav-container">
             <div class="nav-items">
-                <button class="nav-item active" onclick="switchView('overview')">
+                <button class="nav-item active" data-view="overview" onclick="handleNavClick(this)">
                     <span class="nav-icon">◆</span>
                     <span>Visão Geral</span>
                 </button>
-                <button class="nav-item" onclick="switchView('nubank')">
+                <button class="nav-item" data-view="nubank" onclick="handleNavClick(this)">
                     <span class="nav-icon">N</span>
                     <span>Nubank</span>
                 </button>
-                <button class="nav-item" onclick="switchView('itau')">
+                <button class="nav-item" data-view="itau" onclick="handleNavClick(this)">
                     <span class="nav-icon">I</span>
                     <span>Itaú</span>
                 </button>
-                <button class="nav-item" onclick="switchView('btg')">
+                <button class="nav-item" data-view="btg" onclick="handleNavClick(this)">
                     <span class="nav-icon">B</span>
                     <span>BTG</span>
                 </button>
@@ -1008,7 +1012,7 @@
     </div>
 
     <script>
-        // ESTRUTURA DE DADOS CORRIGIDA
+        // DADOS
         let dados = {
             meses: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
             receitas: [0,0,0,0,0,0,0,0,0,0,0,0],
@@ -1018,7 +1022,7 @@
                 limite: 0,
                 gasto: 0,
                 despesasMensais: [0,0,0,0,0,0,0,0,0,0,0,0],
-                parcelas: [], // {descricao, valorTotal, valorParcela, numParcelas, mesInicio, parcelasPagas}
+                parcelas: [],
                 gastosFixos: [],
                 categorias: {}
             },
@@ -1043,25 +1047,19 @@
 
         let currentView = 'overview';
         let currentMonth = new Date().getMonth();
-        let charts = {};
 
-        // INICIALIZAÇÃO CORRIGIDA
+        // INICIALIZAÇÃO
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Primeiro carrega os dados salvos
             carregarDados();
-            
-            // 2. Depois inicializa a UI
             initPeriodSelector();
             initMesInicioSelect();
             updateAll();
-            
-            // Debug: mostra no console se carregou
-            console.log('Dados carregados:', dados);
-            console.log('Parcelas:', dados.nubank.parcelas.length);
+            console.log('App iniciado. View atual:', currentView);
         });
 
         function initPeriodSelector() {
             const container = document.getElementById('periodSelector');
+            if (!container) return;
             container.innerHTML = '';
             dados.meses.forEach((mes, idx) => {
                 const btn = document.createElement('button');
@@ -1093,27 +1091,64 @@
             updateAll();
         }
 
-        function switchView(view) {
+        // NAVEGAÇÃO CORRIGIDA
+        function handleNavClick(element) {
+            const view = element.getAttribute('data-view');
+            console.log('Clicou em:', view);
+            switchView(view, element);
+        }
+
+        function switchView(view, clickedElement) {
             currentView = view;
+            
+            // Esconde todas as views
             document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
-            document.getElementById(`view-${view}`).classList.add('active');
+            
+            // Mostra a view selecionada
+            const targetView = document.getElementById(`view-${view}`);
+            if (targetView) {
+                targetView.classList.add('active');
+                console.log('View ativada:', `view-${view}`);
+            } else {
+                console.error('View não encontrada:', `view-${view}`);
+            }
+            
+            // Atualiza navegação
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            
+            // Se não veio o elemento, procura pelo data-view
+            if (!clickedElement) {
+                clickedElement = document.querySelector(`.nav-item[data-view="${view}"]`);
+            }
+            
+            if (clickedElement) {
+                clickedElement.classList.add('active');
+            }
+            
             updateAll();
         }
 
-        function switchTab(banco, tab) {
-            event.target.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+        function switchTab(banco, tab, clickedTab) {
+            // Atualiza tabs
+            const tabsContainer = clickedTab.parentElement;
+            tabsContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            clickedTab.classList.add('active');
+            
+            // Mostra/esconde conteúdo
             document.querySelectorAll(`[id^="${banco}-tab-"]`).forEach(el => el.classList.add('hidden'));
-            document.getElementById(`${banco}-tab-${tab}`).classList.remove('hidden');
+            const targetContent = document.getElementById(`${banco}-tab-${tab}`);
+            if (targetContent) {
+                targetContent.classList.remove('hidden');
+            }
         }
 
-        // SISTEMA DE PARCELAS INTELIGENTE
         function toggleParcelaTipo() {
             const tipo = document.getElementById('input-parcela-tipo').value;
             document.getElementById('parcela-nova-options').classList.toggle('hidden', tipo !== 'nova');
             document.getElementById('parcela-andamento-options').classList.toggle('hidden', tipo !== 'andamento');
+            if (tipo === 'andamento') {
+                atualizarPreviewAndamento();
+            }
         }
 
         function calcularParcelas() {
@@ -1125,9 +1160,7 @@
                 document.getElementById('preview-parcela').style.display = 'block';
                 document.getElementById('preview-parcela-valor').textContent = formatMoney(valorParcela);
                 
-                // Atualiza preview de restantes se for compra em andamento
-                const tipo = document.getElementById('input-parcela-tipo').value;
-                if (tipo === 'andamento') {
+                if (document.getElementById('input-parcela-tipo').value === 'andamento') {
                     atualizarPreviewAndamento();
                 }
             }
@@ -1137,11 +1170,9 @@
             const num = parseInt(document.getElementById('input-parcela-num').value) || 1;
             const pagas = parseInt(document.getElementById('input-parcelas-pagas').value) || 0;
             const restantes = Math.max(0, num - pagas);
-            const mesInicio = currentMonth; // Simplificação: assume que começou no mês atual menos pagas
             
             document.getElementById('preview-restantes').textContent = restantes;
             
-            // Calcula última parcela
             const mesUltima = currentMonth + restantes - 1;
             if (mesUltima < 12) {
                 document.getElementById('preview-ultima').textContent = dados.meses[mesUltima] + ' 2026';
@@ -1150,15 +1181,7 @@
             }
         }
 
-        // Event listener para atualizar preview em tempo real
-        document.addEventListener('input', function(e) {
-            if (e.target.id === 'input-parcelas-pagas' || e.target.id === 'input-parcela-num') {
-                if (document.getElementById('input-parcela-tipo').value === 'andamento') {
-                    atualizarPreviewAndamento();
-                }
-            }
-        });
-
+        // AÇÕES
         function adicionarParcelaNubank() {
             const descricao = document.getElementById('input-parcela-desc').value.trim();
             const valorTotal = parseFloat(document.getElementById('input-parcela-total').value);
@@ -1174,30 +1197,25 @@
             let mesInicio, parcelasPagas = 0;
             
             if (tipo === 'nova') {
-                // Compra nova: define quando começa
                 mesInicio = parseInt(document.getElementById('input-parcela-mes-inicio').value);
             } else {
-                // Compra em andamento: calcula baseado no que já pagou
                 parcelasPagas = parseInt(document.getElementById('input-parcelas-pagas').value) || 0;
-                // Se já pagou 3 parcelas, começou 3 meses atrás
                 mesInicio = currentMonth - parcelasPagas;
-                if (mesInicio < 0) mesInicio = 0; // Não permite antes de Janeiro
+                if (mesInicio < 0) mesInicio = 0;
             }
             
-            const parcela = {
-                id: Date.now(), // ID único para facilitar edição
-                descricao: descricao,
-                valorTotal: valorTotal,
-                valorParcela: valorParcela,
-                numParcelas: numParcelas,
-                mesInicio: mesInicio,
-                parcelasPagas: parcelasPagas,
-                tipo: tipo
-            };
+            dados.nubank.parcelas.push({
+                id: Date.now(),
+                descricao,
+                valorTotal,
+                valorParcela,
+                numParcelas,
+                mesInicio,
+                parcelasPagas,
+                tipo
+            });
             
-            dados.nubank.parcelas.push(parcela);
-            
-            // Limpa formulário
+            // Limpa
             document.getElementById('input-parcela-desc').value = '';
             document.getElementById('input-parcela-total').value = '';
             document.getElementById('input-parcela-num').value = '';
@@ -1208,9 +1226,90 @@
             updateAll();
             
             const msg = tipo === 'nova' 
-                ? `✅ Parcela adicionada! ${numParcelas}x de ${formatMoney(valorParcela)}`
-                : `✅ Parcela em andamento! Já pagou ${parcelasPagas}, restam ${numParcelas - parcelasPagas}`;
+                ? `✅ ${numParcelas}x de ${formatMoney(valorParcela)}`
+                : `✅ Restam ${numParcelas - parcelasPagas} parcelas`;
             alert(msg);
+        }
+
+        function adicionarGastoFixo() {
+            const desc = document.getElementById('input-fixo-desc').value.trim();
+            const val = parseFloat(document.getElementById('input-fixo-valor').value);
+            
+            if (!desc || !val || val <= 0) {
+                alert('Preencha todos os campos!');
+                return;
+            }
+            
+            dados.nubank.gastosFixos.push({ descricao: desc, valor: val, mesInicio: currentMonth });
+            
+            document.getElementById('input-fixo-desc').value = '';
+            document.getElementById('input-fixo-valor').value = '';
+            
+            salvarDados();
+            updateAll();
+        }
+
+        function salvarLimiteNubank() {
+            const val = parseFloat(document.getElementById('input-nubank-limite').value);
+            if (isNaN(val) || val < 0) return alert('Valor inválido');
+            dados.nubank.limite = val;
+            salvarDados();
+            updateAll();
+        }
+
+        function atualizarSaldoItau() {
+            const val = parseFloat(document.getElementById('input-itau-saldo').value);
+            if (isNaN(val) || val < 0) return alert('Valor inválido');
+            dados.itau.saldo = val;
+            salvarDados();
+            updateAll();
+        }
+
+        function adicionarGastoItau() {
+            const cat = document.getElementById('input-itau-categoria').value;
+            const val = parseFloat(document.getElementById('input-itau-valor').value);
+            
+            if (!val || val <= 0) return alert('Insira um valor válido');
+            
+            dados.itau.gasto += val;
+            dados.itau.categorias[cat] = (dados.itau.categorias[cat] || 0) + val;
+            dados.despesas[currentMonth] += val;
+            dados.categorias[cat] = (dados.categorias[cat] || 0) + val;
+            
+            document.getElementById('input-itau-valor').value = '';
+            salvarDados();
+            updateAll();
+        }
+
+        function salvarCofrinho(banco) {
+            const principal = parseFloat(document.getElementById(`input-cof-${banco}-principal`).value) || 0;
+            const perc = parseFloat(document.getElementById(`input-cof-${banco}-perc`).value) || 100;
+            const data = document.getElementById(`input-cof-${banco}-inicio`).value;
+            
+            dados.cofrinhos[banco] = { ...dados.cofrinhos[banco], principal, percCDI: perc, dataInicio: data };
+            salvarDados();
+            updateAll();
+        }
+
+        function adicionarAcao() {
+            const ticker = document.getElementById('input-acao-ticker').value.toUpperCase().trim();
+            const qtd = parseInt(document.getElementById('input-acao-qtd').value);
+            const pm = parseFloat(document.getElementById('input-acao-pm').value);
+            const atual = parseFloat(document.getElementById('input-acao-atual').value);
+            const div = parseFloat(document.getElementById('input-acao-div').value) || 0;
+            
+            if (!ticker || !qtd || !pm || !atual) return alert('Preencha todos os campos obrigatórios');
+            
+            dados.btg.acoes.push({ ticker, quantidade: qtd, precoMedio: pm, precoAtual: atual, dividendosMensal: div, mesCompra: currentMonth });
+            
+            document.getElementById('input-acao-ticker').value = '';
+            document.getElementById('input-acao-qtd').value = '';
+            document.getElementById('input-acao-pm').value = '';
+            document.getElementById('input-acao-atual').value = '';
+            document.getElementById('input-acao-div').value = '';
+            
+            salvarDados();
+            updateAll();
         }
 
         // CÁLCULOS
@@ -1239,12 +1338,10 @@
                 const mesAtual = currentMonth;
                 const mesFim = p.mesInicio + p.numParcelas - 1;
                 
-                // Só conta se estamos no período de pagamento e ainda há parcelas a pagar
                 if (mesAtual >= p.mesInicio && mesAtual <= mesFim) {
                     const parcelasJaPagas = p.parcelasPagas || 0;
                     const parcelaAtual = mesAtual - p.mesInicio + 1;
                     
-                    // Só paga se a parcela atual é maior que as já pagas
                     if (parcelaAtual > parcelasJaPagas) {
                         total += p.valorParcela;
                     }
@@ -1258,7 +1355,7 @@
             const mesAtual = currentMonth;
             const mesFim = p.mesInicio + p.numParcelas - 1;
             
-            if (mesAtual > mesFim) return 0; // Já terminou
+            if (mesAtual > mesFim) return 0;
             
             const parcelasJaPagas = p.parcelasPagas || 0;
             const parcelaAtualIndex = mesAtual - p.mesInicio + 1;
@@ -1334,12 +1431,10 @@
             document.getElementById('nubank-fixos').textContent = formatMoney(fixosTotal);
             document.getElementById('nubank-parcelas-mes').textContent = formatMoney(gastoParcelas);
             
-            // Cofrinho
             document.getElementById('nubank-cof-total').textContent = formatMoney(dados.cofrinhos.nubank.total);
             document.getElementById('nubank-cof-principal').textContent = formatMoney(dados.cofrinhos.nubank.principal);
             document.getElementById('nubank-cof-rendeu').textContent = formatMoney(dados.cofrinhos.nubank.rendeu);
             
-            // Inputs
             document.getElementById('input-nubank-limite').value = dados.nubank.limite || '';
             document.getElementById('input-cof-nubank-principal').value = dados.cofrinhos.nubank.principal || '';
             document.getElementById('input-cof-nubank-perc').value = dados.cofrinhos.nubank.percCDI || 100;
@@ -1405,7 +1500,7 @@
             renderAcoes();
         }
 
-        // RENDERIZAÇÃO
+        // RENDER
         function renderHistorico() {
             const container = document.getElementById('recent-activity');
             const recentes = dados.historico.slice(-10).reverse();
@@ -1444,7 +1539,6 @@
                 return;
             }
             
-            // Ordena: ativas primeiro, depois por valor
             const ordenadas = [...dados.nubank.parcelas].sort((a, b) => {
                 const aAtiva = calcularParcelasRestantes(a) > 0;
                 const bAtiva = calcularParcelasRestantes(b) > 0;
@@ -1459,12 +1553,9 @@
                 const isAtiva = restantes > 0;
                 const mesFim = p.mesInicio + p.numParcelas - 1;
                 
-                let badge = '';
-                if (isAtiva) {
-                    badge = `<span class="badge badge-warning">${restantes} restantes</span>`;
-                } else {
-                    badge = `<span class="badge badge-success">Quitado</span>`;
-                }
+                let badge = isAtiva 
+                    ? `<span class="badge badge-warning">${restantes} restantes</span>`
+                    : `<span class="badge badge-success">Quitado</span>`;
                 
                 const infoExtra = p.tipo === 'andamento' 
                     ? `<br><span style="color: var(--accent-gold);">Já pagou: ${p.parcelasPagas} de ${p.numParcelas}</span>`
@@ -1544,4 +1635,133 @@
                 return `
                     <div class="list-item" style="flex-direction: column; align-items: flex-start; gap: 12px;">
                         <div style="display: flex; justify-content: space-between; width: 100%;">
-                            
+                            <div class="list-item-info">
+                                <div class="list-item-title" style="font-size: 17px;">${a.ticker}</div>
+                                <div class="list-item-subtitle">${a.quantidade} ações • PM ${formatMoney(a.precoMedio)}</div>
+                            </div>
+                            <div class="list-item-value ${lucro >= 0 ? 'positive' : 'negative'}" style="font-size: 18px;">
+                                ${lucro >= 0 ? '+' : ''}${formatMoney(lucro)}
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: 100%; font-size: 12px; color: var(--text-secondary);">
+                            <div>Atual: ${formatMoney(a.precoAtual)}</div>
+                            <div>Posição: ${formatMoney(atual)}</div>
+                            <div>Rent: ${rent}%</div>
+                            <div>Div/mês: ${formatMoney(divMensal)}</div>
+                            <div style="grid-column: 1/-1; color: var(--accent-gold);">Div. Acumulado: ${formatMoney(divAcum)} (${meses} meses)</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; width: 100%;">
+                            <button class="btn btn-secondary" style="flex: 1; padding: 10px; font-size: 13px;" onclick="editarAcao(${i})">Editar</button>
+                            <button class="btn btn-danger" style="flex: 1; padding: 10px; font-size: 13px;" onclick="removerAcao(${i})">Remover</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // EDITAR/REMOVER
+        function editarParcela(id) {
+            const p = dados.nubank.parcelas.find(x => x.id === id);
+            if (!p) return;
+            
+            const novoVal = prompt('Novo valor da parcela:', p.valorParcela);
+            if (novoVal === null) return;
+            const val = parseFloat(novoVal);
+            if (isNaN(val) || val <= 0) return alert('Valor inválido');
+            
+            p.valorParcela = val;
+            p.valorTotal = val * p.numParcelas;
+            salvarDados();
+            updateAll();
+        }
+
+        function removerParcela(id) {
+            if (!confirm('Remover esta parcela?')) return;
+            dados.nubank.parcelas = dados.nubank.parcelas.filter(p => p.id !== id);
+            salvarDados();
+            updateAll();
+        }
+
+        function editarFixo(idx) {
+            const g = dados.nubank.gastosFixos[idx];
+            const novoVal = prompt('Novo valor:', g.valor);
+            if (novoVal === null) return;
+            const val = parseFloat(novoVal);
+            if (isNaN(val) || val <= 0) return alert('Valor inválido');
+            g.valor = val;
+            salvarDados();
+            updateAll();
+        }
+
+        function removerFixo(idx) {
+            if (!confirm('Remover esta assinatura?')) return;
+            dados.nubank.gastosFixos.splice(idx, 1);
+            salvarDados();
+            updateAll();
+        }
+
+        function editarAcao(idx) {
+            const a = dados.btg.acoes[idx];
+            const novoPreco = prompt('Novo preço atual:', a.precoAtual);
+            if (novoPreco === null) return;
+            const novoDiv = prompt('Novo dividendo mensal:', a.dividendosMensal || 0);
+            if (novoDiv === null) return;
+            
+            const p = parseFloat(novoPreco);
+            const d = parseFloat(novoDiv);
+            
+            if (isNaN(p) || p <= 0) return alert('Preço inválido');
+            a.precoAtual = p;
+            a.dividendosMensal = d;
+            salvarDados();
+            updateAll();
+        }
+
+        function removerAcao(idx) {
+            if (!confirm('Remover esta ação?')) return;
+            dados.btg.acoes.splice(idx, 1);
+            salvarDados();
+            updateAll();
+        }
+
+        // UTILS
+        function formatMoney(val) {
+            return 'R$ ' + (val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function salvarDados() {
+            localStorage.setItem('wealthPro_v3', JSON.stringify(dados));
+            console.log('Dados salvos:', new Date().toLocaleTimeString());
+        }
+
+        function carregarDados() {
+            const saved = localStorage.getItem('wealthPro_v3');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Merge recursivo para não perder estrutura
+                dados = mergeDeep(dados, parsed);
+                console.log('Dados carregados:', dados);
+            }
+        }
+
+        function mergeDeep(target, source) {
+            const output = Object.assign({}, target);
+            if (isObject(target) && isObject(source)) {
+                Object.keys(source).forEach(key => {
+                    if (isObject(source[key])) {
+                        if (!(key in target)) Object.assign(output, { [key]: source[key] });
+                        else output[key] = mergeDeep(target[key], source[key]);
+                    } else {
+                        Object.assign(output, { [key]: source[key] });
+                    }
+                });
+            }
+            return output;
+        }
+
+        function isObject(item) {
+            return (item && typeof item === 'object' && !Array.isArray(item));
+        }
+    </script>
+</body>
+</html>
