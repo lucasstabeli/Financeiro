@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Controle de Contas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#a7f3d0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Controle de Contas" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="manifest" href="manifest.json" />
+
+  <script>
+    // Limpa Service Workers e caches herdados de versoes antigas.
+    // Sem isso, o navegador continua entregando o HTML antigo apos um deploy.
+    (function () {
+      try {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            var hadAny = regs.length > 0;
+            regs.forEach(function (r) { r.unregister(); });
+            if (hadAny && typeof caches !== "undefined") {
+              caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+              }).then(function () {
+                if (!sessionStorage.getItem("__sw_cleared__")) {
+                  sessionStorage.setItem("__sw_cleared__", "1");
+                  location.reload();
+                }
+              });
+            }
+          });
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #cdeccb;
+      --bg-soft: #e7f6e0;
+      --hero: #a7e07a;
+      --hero-deep: #7bc950;
+      --ink: #0f1d12;
+      --ink-soft: #2a3b2c;
+      --muted: #5b6b58;
+      --card: #ffffff;
+      --card-soft: #f1faec;
+      --chip: #1b2a1d;
+      --chip-ink: #f3fbe8;
+      --danger: #e0533c;
+      --danger-soft: #fde4dd;
+      --ok: #2f7d3d;
+      --ok-soft: #d6efce;
+      --line: rgba(15, 29, 18, 0.08);
+      --shadow-card: 0 18px 40px -22px rgba(20, 50, 18, 0.45);
+      --shadow-hero: 0 28px 60px -25px rgba(70, 110, 40, 0.55);
+      --radius-xl: 32px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+        "Segoe UI", system-ui, sans-serif;
+      background: linear-gradient(180deg, #cdeccb 0%, #d8efd0 40%, #e7f6e0 100%);
+      color: var(--ink);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.01em;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 14px 14px calc(env(safe-area-inset-bottom) + 24px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* === HERO === */
+    .hero {
+      position: relative;
+      background:
+        radial-gradient(120% 80% at -10% -20%, rgba(255,255,255,0.45), transparent 55%),
+        radial-gradient(120% 110% at 120% 0%, rgba(255,255,255,0.3), transparent 60%),
+        linear-gradient(160deg, #b9e98a 0%, #8fd25a 55%, #6cbf3d 100%);
+      border-radius: var(--radius-xl);
+      padding: 18px 18px 20px;
+      box-shadow: var(--shadow-hero);
+      overflow: hidden;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -30% -50% -30%;
+      height: 220px;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,0.35), transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1b2a1d, #38513a);
+      color: #d9f1c4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    }
+    .user .greet {
+      font-size: 12px;
+      color: rgba(15, 29, 18, 0.7);
+      line-height: 1.1;
+    }
+    .user .greet strong {
+      display: block;
+      font-size: 15px;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+
+    .period {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(15, 29, 18, 0.1);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+      backdrop-filter: blur(8px);
+    }
+    .period select {
+      background: transparent;
+      border: none;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+      outline: none;
+    }
+
+    .hero-balance {
+      margin-top: 22px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-balance small {
+      display: block;
+      font-size: 12px;
+      color: rgba(15, 29, 18, 0.7);
+      margin-bottom: 4px;
+      letter-spacing: 0;
+    }
+    .hero-balance h1 {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--ink);
+      line-height: 1;
+      word-break: break-word;
+    }
+    .hero-balance h1 .cents {
+      font-size: 18px;
+      font-weight: 700;
+      vertical-align: top;
+      margin-left: 2px;
+      color: rgba(15, 29, 18, 0.65);
+    }
+
+    .hero-actions {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+    .action {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      font: inherit;
+      color: var(--ink);
+      padding: 0;
+    }
+    .action .ico {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(160deg, #1d2c1f, #2e4530);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #d9f1c4;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.22);
+      transition: transform 0.15s ease;
+    }
+    .action:active .ico { transform: scale(0.94); }
+    .action span { font-size: 11px; font-weight: 600; }
+
+    /* === STATS ROW === */
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stat {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .stat .label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .stat .pct {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .stat .pct.up { background: var(--ok-soft); color: var(--ok); }
+    .stat .pct.down { background: var(--danger-soft); color: var(--danger); }
+    .stat .value {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+    .stat .extra { font-size: 11px; color: var(--muted); }
+
+    /* === SECTIONS === */
+    .section {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .section-head h2 {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .section-head p {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .btn {
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: transform 0.1s ease, opacity 0.15s ease;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-dark {
+      background: var(--chip);
+      color: var(--chip-ink);
+    }
+    .btn-ghost {
+      background: var(--card-soft);
+      color: var(--ink);
+    }
+    .btn-danger {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .chip {
+      padding: 5px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card-soft);
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .chip.active {
+      background: var(--chip);
+      color: var(--chip-ink);
+      border-color: var(--chip);
+    }
+
+    .list { display: flex; flex-direction: column; gap: 8px; }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: var(--radius-md);
+      background: var(--card-soft);
+      border: 1px solid var(--line);
+    }
+    .row.pago { opacity: 0.65; }
+    .row .check {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid rgba(15,29,18,0.25);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .row.pago .check {
+      background: var(--ok);
+      border-color: var(--ok);
+      color: #fff;
+    }
+    .row .check svg { width: 12px; height: 12px; display: none; }
+    .row.pago .check svg { display: block; }
+
+    .row .info { flex: 1; min-width: 0; }
+    .row .info .top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .row .desc {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+    .row.pago .desc { text-decoration: line-through; }
+    .row .tag {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(15,29,18,0.06);
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .row .meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .row .right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .row .amount {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .row.pago .amount { text-decoration: line-through; }
+    .row .del {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .row .del:hover { color: var(--danger); }
+
+    .empty {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      padding: 16px 0 4px;
+    }
+
+    /* === MODAL === */
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 29, 18, 0.45);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 50;
+      backdrop-filter: blur(4px);
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      width: 100%;
+      max-width: 480px;
+      padding: 18px 18px calc(env(safe-area-inset-bottom) + 18px);
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.22s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      letter-spacing: -0.02em;
+    }
+    .modal-grab {
+      width: 40px;
+      height: 4px;
+      background: rgba(15,29,18,0.15);
+      border-radius: 2px;
+      margin: 0 auto 14px;
+    }
+
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .field input,
+    .field select {
+      width: 100%;
+      padding: 11px 13px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: var(--card-soft);
+      font: inherit;
+      font-size: 14px;
+      color: var(--ink);
+    }
+    .field input:focus,
+    .field select:focus {
+      outline: none;
+      border-color: var(--hero-deep);
+      background: #fff;
+    }
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .check-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--ink-soft);
+      padding: 6px 0;
+    }
+    .check-field input { width: 18px; height: 18px; accent-color: var(--ok); }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .modal-actions .btn { flex: 1; justify-content: center; padding: 12px; font-size: 13px; }
+
+    footer {
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+      padding-top: 4px;
+    }
+
+    /* === EDITAR NOME === */
+    .btn-edit-nome {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: rgba(15, 29, 18, 0.5);
+      display: flex;
+      align-items: center;
+      transition: color 0.15s ease;
+      margin-left: 2px;
+    }
+    .btn-edit-nome:hover { color: var(--ink); }
+    .btn-edit-nome:active { opacity: 0.7; }
+
+    .modal-nome {
+      background: #fff;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      width: 100%;
+      max-width: 480px;
+      padding: 18px 18px calc(env(safe-area-inset-bottom) + 18px);
+      animation: slideUp 0.22s ease;
+    }
+    .modal-nome h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      letter-spacing: -0.02em;
+    }
+
+    @media (max-width: 360px) {
+      .hero-balance h1 { font-size: 32px; }
+      .action .ico { width: 42px; height: 42px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-top">
+        <div class="user">
+          <div class="avatar" id="avatar">M</div>
+          <div class="greet">
+            Olá,
+            <strong id="nomeUsuario">Mãe</strong>
+          </div>
+          <button class="btn-edit-nome" id="btnEditarNome" type="button" title="Editar nome">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+        <div class="period">
+          <span>📅</span>
+          <select id="selMes" aria-label="Mês">
+            <option value="0">Jan</option>
+            <option value="1">Fev</option>
+            <option value="2">Mar</option>
+            <option value="3">Abr</option>
+            <option value="4">Mai</option>
+            <option value="5">Jun</option>
+            <option value="6">Jul</option>
+            <option value="7">Ago</option>
+            <option value="8">Set</option>
+            <option value="9">Out</option>
+            <option value="10">Nov</option>
+            <option value="11">Dez</option>
+          </select>
+          <select id="selAno" aria-label="Ano"></select>
+        </div>
+      </div>
+
+      <div class="hero-balance">
+        <small>Total a pagar este mês</small>
+        <h1 id="heroValor">R$ 0<span class="cents">,00</span></h1>
+      </div>
+
+      <div class="hero-actions">
+        <button class="action" data-add="fixa" type="button">
+          <span class="ico" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M5 7v13h14V7M9 11h6"/></svg>
+          </span>
+          <span>Fixa</span>
+        </button>
+        <button class="action" data-add="parcela" type="button">
+          <span class="ico" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>
+          </span>
+          <span>Parcela</span>
+        </button>
+        <button class="action" data-add="avulsa" type="button">
+          <span class="ico" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 11h16"/></svg>
+          </span>
+          <span>Avulsa</span>
+        </button>
+        <button class="action" id="btnQuitarMes" type="button">
+          <span class="ico" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+          </span>
+          <span>Quitar</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="stats">
+      <div class="stat">
+        <div class="label">
+          <span>Já pago</span>
+          <span class="pct up" id="pctPago">0%</span>
+        </div>
+        <div class="value" id="valorPago">R$ 0,00</div>
+        <div class="extra" id="qtdPago">0 contas pagas</div>
+      </div>
+      <div class="stat">
+        <div class="label">
+          <span>Pendentes</span>
+          <span class="pct down" id="pctPendente">0%</span>
+        </div>
+        <div class="value" id="valorPendente">R$ 0,00</div>
+        <div class="extra" id="qtdPendente">Nenhuma pendente</div>
+      </div>
+    </section>
+
+    <!-- FIXAS -->
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Contas fixas</h2>
+          <p>Repetem todo mês automaticamente</p>
+        </div>
+        <button class="btn btn-dark" data-add="fixa">+ Adicionar</button>
+      </div>
+      <div class="chips" data-chips="fixas">
+        <div class="chip active" data-filter="todas">Todas</div>
+        <div class="chip" data-filter="pendentes">Pendentes</div>
+        <div class="chip" data-filter="pagas">Pagas</div>
+      </div>
+      <div class="list" id="listaFixas"></div>
+      <div class="empty" id="vazioFixas">Nenhuma conta fixa cadastrada</div>
+    </section>
+
+    <!-- PARCELADAS -->
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Contas parceladas</h2>
+          <p>Aparecem mês a mês até quitar</p>
+        </div>
+        <button class="btn btn-dark" data-add="parcela">+ Adicionar</button>
+      </div>
+      <div class="chips" data-chips="parcelas">
+        <div class="chip active" data-filter="todas">Todas</div>
+        <div class="chip" data-filter="pendentes">Pendentes</div>
+        <div class="chip" data-filter="pagas">Pagas</div>
+      </div>
+      <div class="list" id="listaParceladas"></div>
+      <div class="empty" id="vazioParceladas">Nenhuma parcela cadastrada</div>
+    </section>
+
+    <!-- AVULSAS / CALENDÁRIO -->
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Avulsas do mês</h2>
+          <p>Contas pontuais que não se repetem</p>
+        </div>
+        <button class="btn btn-dark" data-add="avulsa">+ Adicionar</button>
+      </div>
+      <div class="list" id="listaAvulsas"></div>
+      <div class="empty" id="vazioAvulsas">Nenhuma conta avulsa neste mês</div>
+    </section>
+
+    <footer>Adicione à tela inicial para usar como app nativo</footer>
+  </div>
+
+  <!-- MODAL EDITAR NOME -->
+  <div class="modal-bg" id="modalNome">
+    <div class="modal-nome" role="dialog" aria-modal="true">
+      <div class="modal-grab"></div>
+      <h3>Editar nome</h3>
+      <div class="field">
+        <label for="mNomeInput">Seu nome</label>
+        <input type="text" id="mNomeInput" placeholder="Ex: Mãe, Pai, João..." maxlength="30" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="mNomeCancelar">Cancelar</button>
+        <button class="btn btn-dark" id="mNomeSalvar">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-bg" id="modal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-grab"></div>
+      <h3 id="modalTitle">Nova conta</h3>
+
+      <div class="field">
+        <label for="mDescricao">Descrição</label>
+        <input type="text" id="mDescricao" placeholder="Ex: Luz, Internet, Cartão" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="mValor">Valor (R$)</label>
+          <input type="number" id="mValor" inputmode="decimal" step="0.01" placeholder="0,00" />
+        </div>
+        <div class="field">
+          <label for="mDia">Dia do venc.</label>
+          <input type="number" id="mDia" min="1" max="31" placeholder="Ex: 10" />
+        </div>
+      </div>
+
+      <div class="field-row" id="mLinhaParcelas" style="display:none;">
+        <div class="field">
+          <label for="mParcelaAtual">Parcela atual</label>
+          <input type="number" id="mParcelaAtual" min="1" placeholder="1" />
+        </div>
+        <div class="field">
+          <label for="mTotalParcelas">Total de parcelas</label>
+          <input type="number" id="mTotalParcelas" min="1" placeholder="Ex: 12" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="mCategoria">Categoria</label>
+        <select id="mCategoria">
+          <option value="casa">🏠 Casa</option>
+          <option value="pessoal">👤 Pessoal</option>
+          <option value="saude">💊 Saúde</option>
+          <option value="lazer">🎉 Lazer</option>
+          <option value="outros">📦 Outros</option>
+        </select>
+      </div>
+
+      <label class="check-field">
+        <input type="checkbox" id="mPaga" />
+        Já está paga
+      </label>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="mCancelar">Cancelar</button>
+        <button class="btn btn-dark" id="mSalvar">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    /* ============================================================
+     * MODELO DE DADOS
+     * ------------------------------------------------------------
+     * fixas:       repetem todo mês a partir de mesInicio
+     * parceladas:  aparecem N meses a partir de mesInicio (1ª parc.)
+     * avulsas:     pontuais, vinculadas a um mês específico
+     *
+     * Pagamentos são guardados por chave "ANO-MES" (ex: "2026-04")
+     * para que cada mês tenha estado independente de pago/pendente.
+     * ========================================================== */
+
+    const STORAGE_KEY = "controleContas_v2";
+    const LEGACY_KEY = "controleContas_v1";
+
+    const hoje = new Date();
+    const state = {
+      ano: hoje.getFullYear(),
+      mes: hoje.getMonth(),
+      nome: "Mãe",
+      fixas: [],
+      parceladas: [],
+      avulsas: [],
+      filtroFixas: "todas",
+      filtroParcelas: "todas"
+    };
+
+    /* ============================================================
+     * UTILS
+     * ========================================================== */
+    const $ = (id) => document.getElementById(id);
+    const formatBRL = (v) =>
+      Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const chave = (ano, mes) => `${ano}-${String(mes).padStart(2, "0")}`;
+    const chaveAtual = () => chave(state.ano, state.mes);
+    const indiceAbsoluto = (ano, mes) => ano * 12 + mes;
+    const idxAtual = () => indiceAbsoluto(state.ano, state.mes);
+
+    function ehFixaAtiva(f) {
+      const inicio = indiceAbsoluto(f.anoInicio, f.mesInicio);
+      const fim = f.anoFim != null
+        ? indiceAbsoluto(f.anoFim, f.mesFim)
+        : Infinity;
+      const atual = idxAtual();
+      return atual >= inicio && atual <= fim;
+    }
+
+    function parcelaDoMes(p) {
+      const inicio = indiceAbsoluto(p.anoInicio, p.mesInicio);
+      const atual = idxAtual();
+      const offset = atual - inicio;
+      if (offset < 0 || offset >= p.totalParcelas) return null;
+      return offset + 1;
+    }
+
+    function vencimentoDoMes(diaStr) {
+      const dia = Number(diaStr);
+      if (!dia || dia < 1) return null;
+      const ultimoDia = new Date(state.ano, state.mes + 1, 0).getDate();
+      const diaFinal = Math.min(dia, ultimoDia);
+      return new Date(state.ano, state.mes, diaFinal);
+    }
+
+    function formatarVencimento(dia) {
+      const d = vencimentoDoMes(dia);
+      if (!d) return "Sem vencimento";
+      return `Vence ${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}`;
+    }
+
+    /* ============================================================
+     * PERSISTÊNCIA + MIGRAÇÃO
+     * ========================================================== */
+    function salvar() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function carregar() {
+      const cru = localStorage.getItem(STORAGE_KEY);
+      if (cru) {
+        try {
+          Object.assign(state, JSON.parse(cru));
+          return;
+        } catch (e) {
+          console.error("Falha ao ler dados", e);
+        }
+      }
+      migrarLegado();
+    }
+
+    function migrarLegado() {
+      const cru = localStorage.getItem(LEGACY_KEY);
+      if (!cru) return;
+      try {
+        const old = JSON.parse(cru);
+        const ano = hoje.getFullYear();
+
+        (old.fixas || []).forEach((f) => {
+          state.fixas.push({
+            id: f.id || crypto.randomUUID(),
+            descricao: f.descricao,
+            valor: Number(f.valor) || 0,
+            dia: f.vencimento ? new Date(f.vencimento).getDate() : null,
+            categoria: f.categoria || "outros",
+            anoInicio: ano,
+            mesInicio: Number(f.mes) || 0,
+            anoFim: null,
+            mesFim: null,
+            pagamentos: f.pago ? { [chave(ano, Number(f.mes) || 0)]: true } : {}
+          });
+        });
+
+        (old.parceladas || []).forEach((p) => {
+          const mesCriacao = Number(p.mes) || 0;
+          const parcAtual = Number(p.parcelaAtual) || 1;
+          const offsetAbsoluto = ano * 12 + mesCriacao - (parcAtual - 1);
+          const anoInicio = Math.floor(offsetAbsoluto / 12);
+          const mesInicio = offsetAbsoluto % 12;
+          state.parceladas.push({
+            id: p.id || crypto.randomUUID(),
+            descricao: p.descricao,
+            valor: Number(p.valor) || 0,
+            dia: p.vencimento ? new Date(p.vencimento).getDate() : null,
+            categoria: p.categoria || "outros",
+            totalParcelas: Number(p.totalParcelas) || 1,
+            anoInicio,
+            mesInicio,
+            pagamentos: p.pago ? { [chave(ano, mesCriacao)]: true } : {}
+          });
+        });
+
+        (old.calendario || []).forEach((c) => {
+          const d = c.vencimento ? new Date(c.vencimento) : new Date();
+          state.avulsas.push({
+            id: c.id || crypto.randomUUID(),
+            descricao: c.descricao,
+            valor: Number(c.valor) || 0,
+            dia: d.getDate(),
+            categoria: c.categoria || "outros",
+            ano: d.getFullYear(),
+            mes: d.getMonth(),
+            pago: !!c.pago
+          });
+        });
+
+        salvar();
+      } catch (e) {
+        console.error("Migração falhou", e);
+      }
+    }
+
+    /* ============================================================
+     * SELEÇÃO DE PERÍODO
+     * ========================================================== */
+    const selMes = $("selMes");
+    const selAno = $("selAno");
+
+    function popularAnos() {
+      const ano = hoje.getFullYear();
+      selAno.innerHTML = "";
+      for (let a = ano - 2; a <= ano + 5; a++) {
+        const opt = document.createElement("option");
+        opt.value = a;
+        opt.textContent = a;
+        selAno.appendChild(opt);
+      }
+    }
+
+    selMes.addEventListener("change", () => {
+      state.mes = Number(selMes.value);
+      salvar();
+      renderizar();
+    });
+    selAno.addEventListener("change", () => {
+      state.ano = Number(selAno.value);
+      salvar();
+      renderizar();
+    });
+
+    /* ============================================================
+     * RENDER — RESUMO E LISTAS
+     * ========================================================== */
+    function itensDoMes() {
+      const k = chaveAtual();
+
+      const fixas = state.fixas.filter(ehFixaAtiva).map((f) => ({
+        id: f.id,
+        ref: f,
+        kind: "fixa",
+        descricao: f.descricao,
+        valor: f.valor,
+        dia: f.dia,
+        categoria: f.categoria,
+        tag: "Fixa",
+        pago: !!f.pagamentos[k]
+      }));
+
+      const parceladas = state.parceladas
+        .map((p) => {
+          const n = parcelaDoMes(p);
+          if (n == null) return null;
+          return {
+            id: p.id,
+            ref: p,
+            kind: "parcela",
+            descricao: p.descricao,
+            valor: p.valor,
+            dia: p.dia,
+            categoria: p.categoria,
+            tag: `Parcela ${n}/${p.totalParcelas}`,
+            pago: !!p.pagamentos[k]
+          };
+        })
+        .filter(Boolean);
+
+      const avulsas = state.avulsas
+        .filter((a) => a.ano === state.ano && a.mes === state.mes)
+        .map((a) => ({
+          id: a.id,
+          ref: a,
+          kind: "avulsa",
+          descricao: a.descricao,
+          valor: a.valor,
+          dia: a.dia,
+          categoria: a.categoria,
+          tag: "Avulsa",
+          pago: !!a.pago
+        }));
+
+      return { fixas, parceladas, avulsas };
+    }
+
+    function atualizarResumo({ fixas, parceladas, avulsas }) {
+      const todas = [...fixas, ...parceladas, ...avulsas];
+      let pago = 0, pendente = 0, qPago = 0, qPendente = 0;
+      todas.forEach((i) => {
+        const v = Number(i.valor) || 0;
+        if (i.pago) { pago += v; qPago++; }
+        else { pendente += v; qPendente++; }
+      });
+      const total = pago + pendente;
+
+      const inteiro = Math.floor(pendente);
+      const cents = Math.round((pendente - inteiro) * 100);
+      $("heroValor").innerHTML =
+        `R$ ${inteiro.toLocaleString("pt-BR")}<span class="cents">,${String(cents).padStart(2, "0")}</span>`;
+
+      $("valorPago").textContent = formatBRL(pago);
+      $("valorPendente").textContent = formatBRL(pendente);
+      $("qtdPago").textContent =
+        qPago === 0 ? "Nenhuma paga ainda" : `${qPago} ${qPago === 1 ? "conta paga" : "contas pagas"}`;
+      $("qtdPendente").textContent =
+        qPendente === 0 ? "Tudo em dia 🎉" : `${qPendente} ${qPendente === 1 ? "pendente" : "pendentes"}`;
+
+      const pctPago = total > 0 ? Math.round((pago / total) * 100) : 0;
+      $("pctPago").textContent = pctPago + "%";
+      $("pctPendente").textContent = (100 - pctPago) + "%";
+    }
+
+    function aplicarFiltro(arr, filtro) {
+      if (filtro === "pendentes") return arr.filter((i) => !i.pago);
+      if (filtro === "pagas") return arr.filter((i) => i.pago);
+      return arr;
+    }
+
+    function criarLinha(item) {
+      const row = document.createElement("div");
+      row.className = "row" + (item.pago ? " pago" : "");
+
+      const check = document.createElement("button");
+      check.className = "check";
+      check.type = "button";
+      check.setAttribute("aria-label", "Marcar como pago");
+      check.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
+      check.addEventListener("click", () => togglePago(item));
+
+      const info = document.createElement("div");
+      info.className = "info";
+
+      const top = document.createElement("div");
+      top.className = "top";
+      const desc = document.createElement("div");
+      desc.className = "desc";
+      desc.textContent = item.descricao;
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = item.tag;
+      top.appendChild(desc);
+      top.appendChild(tag);
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = formatarVencimento(item.dia);
+
+      info.appendChild(top);
+      info.appendChild(meta);
+
+      const right = document.createElement("div");
+      right.className = "right";
+      const amount = document.createElement("div");
+      amount.className = "amount";
+      amount.textContent = formatBRL(item.valor);
+      const del = document.createElement("button");
+      del.className = "del";
+      del.type = "button";
+      del.title = "Excluir";
+      del.textContent = "×";
+      del.addEventListener("click", () => excluir(item));
+      right.appendChild(amount);
+      right.appendChild(del);
+
+      row.appendChild(check);
+      row.appendChild(info);
+      row.appendChild(right);
+      return row;
+    }
+
+    function preencherLista(elId, vazioId, itens) {
+      const el = $(elId);
+      const vazio = $(vazioId);
+      el.innerHTML = "";
+      if (itens.length === 0) {
+        vazio.style.display = "block";
+        return;
+      }
+      vazio.style.display = "none";
+      itens
+        .slice()
+        .sort((a, b) => (a.dia || 99) - (b.dia || 99))
+        .forEach((i) => el.appendChild(criarLinha(i)));
+    }
+
+    function renderizar() {
+      selMes.value = state.mes;
+      selAno.value = state.ano;
+
+      const { fixas, parceladas, avulsas } = itensDoMes();
+
+      preencherLista("listaFixas", "vazioFixas", aplicarFiltro(fixas, state.filtroFixas));
+      preencherLista("listaParceladas", "vazioParceladas", aplicarFiltro(parceladas, state.filtroParcelas));
+      preencherLista("listaAvulsas", "vazioAvulsas", avulsas);
+
+      atualizarResumo({ fixas, parceladas, avulsas });
+    }
+
+    /* ============================================================
+     * AÇÕES — PAGAMENTO E EXCLUSÃO
+     * ========================================================== */
+    function togglePago(item) {
+      const k = chaveAtual();
+      if (item.kind === "avulsa") {
+        item.ref.pago = !item.ref.pago;
+      } else {
+        item.ref.pagamentos = item.ref.pagamentos || {};
+        if (item.ref.pagamentos[k]) delete item.ref.pagamentos[k];
+        else item.ref.pagamentos[k] = true;
+      }
+      salvar();
+      renderizar();
+    }
+
+    function excluir(item) {
+      let msg;
+      if (item.kind === "fixa")
+        msg = `Excluir a conta fixa "${item.descricao}"?\n(remove de todos os meses)`;
+      else if (item.kind === "parcela")
+        msg = `Excluir o parcelamento "${item.descricao}"?\n(remove todas as parcelas)`;
+      else
+        msg = `Excluir "${item.descricao}"?`;
+
+      if (!confirm(msg)) return;
+
+      if (item.kind === "fixa") {
+        state.fixas = state.fixas.filter((f) => f.id !== item.id);
+      } else if (item.kind === "parcela") {
+        state.parceladas = state.parceladas.filter((p) => p.id !== item.id);
+      } else {
+        state.avulsas = state.avulsas.filter((a) => a.id !== item.id);
+      }
+      salvar();
+      renderizar();
+    }
+
+    function quitarMes() {
+      const { fixas, parceladas, avulsas } = itensDoMes();
+      const pendentes = [...fixas, ...parceladas, ...avulsas].filter((i) => !i.pago);
+      if (pendentes.length === 0) {
+        alert("Nada a quitar — tudo pago neste mês.");
+        return;
+      }
+      if (!confirm(`Marcar ${pendentes.length} conta(s) como pagas?`)) return;
+      pendentes.forEach((i) => togglePagoSilencioso(i));
+      salvar();
+      renderizar();
+    }
+
+    function togglePagoSilencioso(item) {
+      const k = chaveAtual();
+      if (item.kind === "avulsa") {
+        item.ref.pago = true;
+      } else {
+        item.ref.pagamentos = item.ref.pagamentos || {};
+        item.ref.pagamentos[k] = true;
+      }
+    }
+
+    /* ============================================================
+     * MODAL — ADIÇÃO DE CONTAS
+     * ========================================================== */
+    const modal = $("modal");
+    let modoModal = "fixa";
+
+    function abrirModal(modo) {
+      modoModal = modo;
+      $("modalTitle").textContent =
+        modo === "fixa" ? "Nova conta fixa"
+        : modo === "parcela" ? "Nova compra parcelada"
+        : "Nova conta avulsa";
+      $("mLinhaParcelas").style.display = modo === "parcela" ? "grid" : "none";
+      $("mDescricao").value = "";
+      $("mValor").value = "";
+      $("mDia").value = "";
+      $("mParcelaAtual").value = "1";
+      $("mTotalParcelas").value = "";
+      $("mCategoria").value = "casa";
+      $("mPaga").checked = false;
+      modal.classList.add("open");
+      setTimeout(() => $("mDescricao").focus(), 50);
+    }
+
+    function fecharModal() {
+      modal.classList.remove("open");
+    }
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) fecharModal();
+    });
+    $("mCancelar").addEventListener("click", fecharModal);
+
+    $("mSalvar").addEventListener("click", () => {
+      const descricao = $("mDescricao").value.trim();
+      const valor = parseFloat(($("mValor").value || "").replace(",", "."));
+      const dia = parseInt($("mDia").value, 10) || null;
+      const categoria = $("mCategoria").value;
+      const pago = $("mPaga").checked;
+
+      if (!descricao) return alert("Informe a descrição.");
+      if (isNaN(valor) || valor <= 0) return alert("Informe um valor válido.");
+
+      const k = chaveAtual();
+
+      if (modoModal === "fixa") {
+        state.fixas.push({
+          id: crypto.randomUUID(),
+          descricao, valor, dia, categoria,
+          anoInicio: state.ano,
+          mesInicio: state.mes,
+          anoFim: null, mesFim: null,
+          pagamentos: pago ? { [k]: true } : {}
+        });
+      } else if (modoModal === "parcela") {
+        const parcAtual = parseInt($("mParcelaAtual").value, 10) || 1;
+        const totalParc = parseInt($("mTotalParcelas").value, 10);
+        if (isNaN(totalParc) || totalParc < 1)
+          return alert("Informe o total de parcelas.");
+        if (parcAtual > totalParc)
+          return alert("Parcela atual não pode ser maior que o total.");
+
+        const offset = idxAtual() - (parcAtual - 1);
+        const anoInicio = Math.floor(offset / 12);
+        const mesInicio = offset % 12;
+
+        state.parceladas.push({
+          id: crypto.randomUUID(),
+          descricao, valor, dia, categoria,
+          totalParcelas: totalParc,
+          anoInicio, mesInicio,
+          pagamentos: pago ? { [k]: true } : {}
+        });
+      } else {
+        state.avulsas.push({
+          id: crypto.randomUUID(),
+          descricao, valor, dia, categoria,
+          ano: state.ano, mes: state.mes,
+          pago
+        });
+      }
+
+      salvar();
+      fecharModal();
+      renderizar();
+    });
+
+    document.querySelectorAll("[data-add]").forEach((b) =>
+      b.addEventListener("click", () => abrirModal(b.dataset.add))
+    );
+    $("btnQuitarMes").addEventListener("click", quitarMes);
+
+    /* ============================================================
+     * FILTROS
+     * ========================================================== */
+    document.querySelectorAll("[data-chips]").forEach((wrap) => {
+      const tipo = wrap.dataset.chips;
+      wrap.querySelectorAll(".chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          wrap.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
+          chip.classList.add("active");
+          if (tipo === "fixas") state.filtroFixas = chip.dataset.filter;
+          else state.filtroParcelas = chip.dataset.filter;
+          renderizar();
+        });
+      });
+    });
+
+    /* ============================================================
+     * EDITAR NOME
+     * ========================================================== */
+    function renderizarNome() {
+      const nome = state.nome || "Mãe";
+      $("nomeUsuario").textContent = nome;
+      $("avatar").textContent = nome.trim().charAt(0).toUpperCase();
+    }
+
+    const modalNome = $("modalNome");
+
+    function abrirModalNome() {
+      $("mNomeInput").value = state.nome || "";
+      modalNome.classList.add("open");
+      setTimeout(() => $("mNomeInput").focus(), 50);
+    }
+
+    function fecharModalNome() {
+      modalNome.classList.remove("open");
+    }
+
+    $("btnEditarNome").addEventListener("click", abrirModalNome);
+    $("mNomeCancelar").addEventListener("click", fecharModalNome);
+    modalNome.addEventListener("click", (e) => {
+      if (e.target === modalNome) fecharModalNome();
+    });
+
+    $("mNomeSalvar").addEventListener("click", () => {
+      const novo = $("mNomeInput").value.trim();
+      if (!novo) return alert("Informe um nome.");
+      state.nome = novo;
+      salvar();
+      renderizarNome();
+      fecharModalNome();
+    });
+
+    $("mNomeInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") $("mNomeSalvar").click();
+      if (e.key === "Escape") fecharModalNome();
+    });
+
+    /* ============================================================
+     * BOOTSTRAP
+     * ========================================================== */
+    popularAnos();
+    carregar();
+    renderizarNome();
+    renderizar();
+  </script>
+</body>
+</html>
